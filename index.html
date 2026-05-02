@@ -1269,6 +1269,123 @@ body.viaje-zoom #life-canvas {
 }
 @media (max-width: 900px) { .paper-stamp { display: none; } }
 
+/* ━━━━━━━━━━━━ PARTITURA EMERGENTE · easter-egg en el cuaderno ━━━━━━━━━━━━
+
+   Reproductor de música generativa que solo aparece cuando estás en
+   modo lectura (body.in-entry). Visualmente discreto: el teaser es
+   marginalia minúscula que el ojo casual no nota, pero quien busca
+   encuentra. El panel expandido sigue tenue, en tipografía mono y
+   colores muy bajos para no competir con el texto del paper. */
+.song-egg {
+  position: fixed;
+  bottom: 22px;
+  right: 28px;
+  z-index: 100;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--paper-faint);
+  display: none;
+}
+body.in-entry .song-egg { display: block; }
+.song-egg__teaser {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.6s ease, opacity 0.4s ease;
+  opacity: 0.55;
+}
+.song-egg__teaser:hover { color: var(--paper-mute); opacity: 1; }
+.song-egg__teaser .glyph { color: var(--ochre); margin-right: 4px; opacity: 0.7; }
+.song-egg.expanded .song-egg__teaser { display: none; }
+.song-egg__panel {
+  display: none;
+  position: relative;
+  background: rgba(7, 9, 13, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--paper-faint);
+  padding: 18px 18px 14px;
+  width: 280px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--paper-mute);
+}
+.song-egg.expanded .song-egg__panel { display: block; }
+.song-egg__title {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 0.78rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--paper-soft);
+  margin-bottom: 10px;
+}
+.song-egg__title .glyph { color: var(--ochre); margin-right: 4px; font-style: normal; }
+.song-egg__explain {
+  margin: 0 0 14px;
+  color: var(--paper-mute);
+}
+.song-egg__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--paper-ghost);
+  margin-bottom: 8px;
+}
+.song-egg__btn {
+  background: transparent;
+  border: 1px solid var(--paper-faint);
+  color: var(--paper-mute);
+  padding: 5px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.song-egg__btn:hover:not(:disabled) {
+  color: var(--ochre);
+  border-color: var(--ochre-deep);
+}
+.song-egg__btn:disabled { opacity: 0.4; cursor: default; }
+.song-egg__meter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--paper-faint);
+  letter-spacing: 0.12em;
+}
+.song-egg__close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--paper-faint);
+  font-size: 0.85rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+.song-egg__close:hover { color: var(--paper-mute); }
+.song-egg__download {
+  width: 100%;
+  text-align: center;
+  margin-top: 4px;
+}
+@media (max-width: 600px) {
+  .song-egg { bottom: 18px; right: 18px; }
+  .song-egg__panel { width: calc(100vw - 36px); max-width: 280px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .song-egg__teaser { transition: none; }
+}
+
 .back-to-sky {
   position: fixed;
   top: 18px;
@@ -2735,6 +2852,380 @@ function drawNetworkHero(ctx, c) {
 
 /* Si la URL trae un #node-id, abrir ese nodo nada más cargar. */
 syncPanelFromHash();
+
+/* ━━━━━━━━━━━━ PARTITURA EMERGENTE · Conway → MIDI dungeon synth ━━━━━━━━━━━━
+
+   Easter-egg de música generativa que vive en el cuaderno (body.in-entry).
+   Cuando el visitante activa "play":
+     · Carga lazy Tone.js + @tonejs/midi (~185 KB, MIT, vía esm.sh).
+     · Inicia un autómata B3/S23 paralelo (16x10, toroidal) sembrado con
+       R-pentomino. Cada generación dura 750 ms (80 BPM).
+     · Cada célula que NACE dispara una nota en escala frigia E.
+       La columna mapea al pitch (3 octavas, E2-D5).
+       La fila mapea a la duración (filas altas = corcheas, bajas = redondas).
+     · Un drone E1 sostiene la fundamental para el carácter dungeon synth.
+     · Síntesis: PolySynth FM con filtro pasa-bajos a 1.8 kHz y reverb de 8 s.
+     · Las notas se acumulan en memoria; al pedir descarga se exportan
+       como archivo .mid real (compatible con cualquier DAW). */
+
+const songEgg = document.getElementById('song-egg');
+let songStack = null;       // { Tone, Midi, pad, drone, reverb, lowpass }
+let songRunning = false;
+let songTickHandle = null;
+let songSessionStart = 0;
+let songNotes = [];
+let songStableCount = 0;
+let songNodeId = '';
+
+// Conway state · grid 16x10 toroidal
+const SONG_COLS = 16, SONG_ROWS = 10;
+let songGrid = new Uint8Array(SONG_COLS * SONG_ROWS);
+
+// Wolfram state · 1D · misma anchura que Conway para reusar el mapeo de pitch
+const SONG_W_COLS = 16;
+let wolfRow = new Uint8Array(SONG_W_COLS);
+let wolfRule = 110;
+const WOLF_RULES_MUSIC = [110, 30, 90, 54, 62, 73, 184, 150];
+
+// Motor activo de la sesión actual · sorteado al pulsar play
+let songEngine = 'conway'; // 'conway' | 'wolfram'
+
+// Frigia E natural · 3 octavas (E2, F2, G2, A2, B2, C3, D3, ... D5)
+const PHRYGIAN_E = [
+  'E2','F2','G2','A2','B2','C3','D3',
+  'E3','F3','G3','A3','B3','C4','D4',
+  'E4','F4','G4','A4','B4','C5','D5'
+];
+
+function songSet(x, y, v) {
+  const xx = ((x % SONG_COLS) + SONG_COLS) % SONG_COLS;
+  const yy = ((y % SONG_ROWS) + SONG_ROWS) % SONG_ROWS;
+  songGrid[yy * SONG_COLS + xx] = v;
+}
+function songGet(x, y) {
+  const xx = ((x % SONG_COLS) + SONG_COLS) % SONG_COLS;
+  const yy = ((y % SONG_ROWS) + SONG_ROWS) % SONG_ROWS;
+  return songGrid[yy * SONG_COLS + xx];
+}
+
+function songSeedRPentomino() {
+  songGrid.fill(0);
+  // semilla en posición ligeramente aleatoria para que cada sesión
+  // explore una región distinta de la grid toroidal
+  const cx = Math.floor(SONG_COLS / 2) + Math.floor((Math.random() - 0.5) * 4);
+  const cy = Math.floor(SONG_ROWS / 2) + Math.floor((Math.random() - 0.5) * 2);
+  // R-pentomino:
+  //   . X X
+  //   X X .
+  //   . X .
+  songSet(cx + 0, cy - 1, 1);
+  songSet(cx + 1, cy - 1, 1);
+  songSet(cx - 1, cy + 0, 1);
+  songSet(cx + 0, cy + 0, 1);
+  songSet(cx + 0, cy + 1, 1);
+}
+
+function songStep() {
+  const next = new Uint8Array(SONG_COLS * SONG_ROWS);
+  const newborn = [];
+  for (let y = 0; y < SONG_ROWS; y++) {
+    for (let x = 0; x < SONG_COLS; x++) {
+      let n = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          n += songGet(x + dx, y + dy);
+        }
+      }
+      const alive = songGet(x, y);
+      if (alive && (n === 2 || n === 3)) {
+        next[y * SONG_COLS + x] = 1;
+      } else if (!alive && n === 3) {
+        next[y * SONG_COLS + x] = 1;
+        newborn.push({ x, y });
+      }
+    }
+  }
+  songGrid = next;
+  return newborn;
+}
+
+function songColToNote(col) {
+  const idx = Math.floor((col / SONG_COLS) * PHRYGIAN_E.length);
+  return PHRYGIAN_E[Math.min(idx, PHRYGIAN_E.length - 1)];
+}
+
+/* ─── Wolfram 1D · sembrar y avanzar ─────────────────────────────
+   Una fila de células (toroidal) que se actualiza generación a
+   generación según una regla 0-255. Las "newborn" son las celdas
+   que estaban muertas y nacen este tick — eso es lo que toca. */
+function wolfSeed() {
+  wolfRow = new Uint8Array(SONG_W_COLS);
+  wolfRow[Math.floor(SONG_W_COLS / 2)] = 1; // semilla central clásica
+  wolfRule = WOLF_RULES_MUSIC[Math.floor(Math.random() * WOLF_RULES_MUSIC.length)];
+}
+function wolfStep() {
+  const next = new Uint8Array(SONG_W_COLS);
+  const newborn = [];
+  for (let i = 0; i < SONG_W_COLS; i++) {
+    const left = wolfRow[(i - 1 + SONG_W_COLS) % SONG_W_COLS];
+    const center = wolfRow[i];
+    const right = wolfRow[(i + 1) % SONG_W_COLS];
+    const idx = (left << 2) | (center << 1) | right;
+    next[i] = (wolfRule >> idx) & 1;
+    if (next[i] && !wolfRow[i]) newborn.push({ x: i, y: i % SONG_ROWS });
+  }
+  wolfRow = next;
+  return newborn;
+}
+
+// fila → duración (en notación Tone) y aproximación en segundos para el MIDI
+const SONG_DURATIONS = [
+  { tone: '8n',  sec: 0.375 },
+  { tone: '4n',  sec: 0.75 },
+  { tone: '2n',  sec: 1.5 },
+  { tone: '1n',  sec: 3 },
+  { tone: '1n.', sec: 4.5 }
+];
+function songRowToDuration(row) {
+  const idx = Math.floor((row / SONG_ROWS) * SONG_DURATIONS.length);
+  return SONG_DURATIONS[Math.min(idx, SONG_DURATIONS.length - 1)];
+}
+
+async function ensureAudioStack() {
+  if (songStack) return songStack;
+  const Tone = await import('https://esm.sh/tone@14.7.77');
+  const midiMod = await import('https://esm.sh/@tonejs/midi@2.0.28');
+  // Cadena: synth → lowpass → reverb → out · característico dungeon synth
+  const reverb = new Tone.Reverb({ decay: 8, wet: 0.6 }).toDestination();
+  await reverb.generate();
+  const lowpass = new Tone.Filter({ frequency: 1800, type: 'lowpass', rolloff: -24 }).connect(reverb);
+  const pad = new Tone.PolySynth(Tone.FMSynth, {
+    harmonicity: 2.5,
+    modulationIndex: 8,
+    oscillator: { type: 'sine' },
+    modulation: { type: 'triangle' },
+    envelope: { attack: 0.6, decay: 0.4, sustain: 0.6, release: 3.5 },
+    modulationEnvelope: { attack: 0.3, decay: 0.2, sustain: 0.4, release: 2 }
+  }).connect(lowpass);
+  pad.volume.value = -10;
+  pad.maxPolyphony = 16;
+  // drone fundamental E1 sostenido · firma del dungeon synth
+  const drone = new Tone.AMSynth({
+    harmonicity: 1.5,
+    oscillator: { type: 'triangle' },
+    modulation: { type: 'sine' },
+    envelope: { attack: 6, decay: 0, sustain: 1, release: 6 }
+  }).connect(lowpass);
+  drone.volume.value = -18;
+
+  songStack = { Tone, Midi: midiMod.Midi, pad, drone, reverb, lowpass };
+  return songStack;
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60).toString().padStart(2, '0');
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+function updateSongMeter() {
+  const meter = songEgg.querySelector('.song-egg__meter');
+  if (!meter) return;
+  const elapsed = songRunning ? (performance.now() / 1000 - songSessionStart) : 0;
+  meter.textContent = `${formatTime(elapsed)} · ${songNotes.length} notas`;
+}
+
+function songPlayNote(note, dur, velocity = 0.5) {
+  if (!songStack || !songRunning) return;
+  songStack.pad.triggerAttackRelease(note, dur.tone, undefined, velocity);
+  songNotes.push({
+    note,
+    duration: dur.sec,
+    time: performance.now() / 1000 - songSessionStart,
+    velocity
+  });
+}
+
+function songTick() {
+  const newborn = songEngine === 'conway' ? songStep() : wolfStep();
+  if (newborn.length === 0) songStableCount++;
+  else songStableCount = 0;
+  // re-seeding cuando se estabiliza (≈22 s de inactividad)
+  if (songStableCount > 30) {
+    if (songEngine === 'conway') songSeedRPentomino();
+    else wolfSeed();
+    songStableCount = 0;
+    // texto dinámico se actualiza por si la regla Wolfram cambió
+    if (songEngine === 'wolfram') updateSongExplain();
+    return;
+  }
+  // polifonía limitada: 4 notas por tick para no saturar
+  const toPlay = newborn.slice(0, 4);
+  toPlay.forEach(({ x, y }) => {
+    songPlayNote(songColToNote(x), songRowToDuration(y), 0.35 + Math.random() * 0.25);
+  });
+  updateSongMeter();
+}
+
+/* Texto íntimo dirigido al visitante · cambia según qué motor le tocó.
+   Antes de pulsar play, hay un mensaje genérico previo (ver HTML inicial). */
+function updateSongExplain() {
+  const explain = songEgg && songEgg.querySelector('.song-egg__explain');
+  if (!explain) return;
+  if (songEngine === 'conway') {
+    explain.innerHTML = `Esta canción se está generando ahora mismo solo para ti, siguiendo las reglas del <em>Game of Life</em> de Conway. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.`;
+  } else {
+    explain.innerHTML = `Esta canción se está generando ahora mismo solo para ti, siguiendo la <em>regla&nbsp;${wolfRule}</em> de Wolfram. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.`;
+  }
+}
+
+async function startSong() {
+  const stack = await ensureAudioStack();
+  await stack.Tone.start();
+  if (!songRunning) {
+    // marcar como activo ANTES del seed para que las notas iniciales
+    // pasen el guard de songPlayNote (que comprueba songRunning)
+    songRunning = true;
+    if (songNotes.length === 0) {
+      // SORTEO · cada sesión nueva escoge entre los dos autómatas
+      // que ya viven como capas de fondo del sitio. La sesión actual
+      // es completamente única e irrepetible incluso para el mismo
+      // visitante en la siguiente visita.
+      songEngine = Math.random() < 0.5 ? 'conway' : 'wolfram';
+      songSessionStart = performance.now() / 1000;
+
+      if (songEngine === 'conway') {
+        songSeedRPentomino();
+        // las células iniciales también suenan, suavemente
+        for (let y = 0; y < SONG_ROWS; y++) {
+          for (let x = 0; x < SONG_COLS; x++) {
+            if (songGet(x, y)) {
+              songPlayNote(songColToNote(x), songRowToDuration(y), 0.3);
+            }
+          }
+        }
+      } else {
+        wolfSeed();
+        // la fila Wolfram inicial tiene una sola célula viva;
+        // toca una nota como semilla
+        for (let i = 0; i < SONG_W_COLS; i++) {
+          if (wolfRow[i]) {
+            songPlayNote(songColToNote(i), songRowToDuration(i % SONG_ROWS), 0.3);
+          }
+        }
+      }
+      updateSongExplain();
+    }
+    stack.drone.triggerAttack('E1');
+    songTickHandle = setInterval(songTick, 750);
+    songNodeId = window.location.hash.slice(1) || 'manifiesto';
+  }
+  refreshSongUI();
+}
+
+function stopSong() {
+  if (!songRunning) return;
+  clearInterval(songTickHandle);
+  songTickHandle = null;
+  if (songStack) {
+    songStack.drone.triggerRelease();
+    songStack.pad.releaseAll();
+  }
+  songRunning = false;
+  refreshSongUI();
+}
+
+function exportSongMidi() {
+  if (!songStack || songNotes.length === 0) return;
+  const { Midi, Tone } = songStack;
+  const midi = new Midi();
+  midi.header.setTempo(80);
+  midi.header.name = 'ArchALife · partitura emergente';
+  const track = midi.addTrack();
+  const engineLabel = songEngine === 'conway'
+    ? 'Conway · R-pentomino'
+    : `Wolfram · regla ${wolfRule}`;
+  track.name = `${engineLabel} · ${songNodeId} · ${new Date().toISOString().slice(0,10)}`;
+  track.instrument.number = 91; // pad halo / pad sweep · GM
+  songNotes.forEach(n => {
+    track.addNote({
+      midi: Tone.Frequency(n.note).toMidi(),
+      time: n.time,
+      duration: n.duration,
+      velocity: n.velocity
+    });
+  });
+  const blob = new Blob([midi.toArray()], { type: 'audio/midi' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const engineSlug = songEngine === 'conway' ? 'conway-rpentomino' : `wolfram-r${wolfRule}`;
+  a.download = `archalife-${songNodeId}-${engineSlug}-${new Date().toISOString().slice(0,10)}.mid`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function refreshSongUI() {
+  const playBtn = songEgg.querySelector('.song-egg__play');
+  const dlBtn = songEgg.querySelector('.song-egg__download');
+  if (playBtn) playBtn.textContent = songRunning ? '⏸ pausa' : '⏵ play';
+  if (dlBtn) dlBtn.disabled = songNotes.length === 0;
+  updateSongMeter();
+}
+
+// listeners del widget
+if (songEgg) {
+  const teaser = songEgg.querySelector('.song-egg__teaser');
+  const closeBtn = songEgg.querySelector('.song-egg__close');
+  const playBtn = songEgg.querySelector('.song-egg__play');
+  const dlBtn = songEgg.querySelector('.song-egg__download');
+
+  teaser.addEventListener('click', () => {
+    songEgg.classList.add('expanded');
+    refreshSongUI();
+  });
+  closeBtn.addEventListener('click', () => {
+    songEgg.classList.remove('expanded');
+  });
+  playBtn.addEventListener('click', async () => {
+    try {
+      if (songRunning) stopSong();
+      else await startSong();
+    } catch (err) {
+      console.error('partitura emergente · fallo al iniciar audio', err);
+    }
+  });
+  dlBtn.addEventListener('click', exportSongMidi);
+
+  // si el visitante sale del cuaderno, pausamos pero no perdemos las notas
+  const observer = new MutationObserver(() => {
+    if (!document.body.classList.contains('in-entry') && songRunning) {
+      stopSong();
+    }
+  });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  // tick visual de meter cada segundo aunque no haya notas nuevas
+  setInterval(() => { if (songRunning) updateSongMeter(); }, 1000);
+}
 </script>
+
+<!-- partitura emergente · easter-egg en el cuaderno -->
+<div class="song-egg" id="song-egg">
+  <div class="song-egg__teaser"><span class="glyph">⌖</span>partitura emergente</div>
+  <div class="song-egg__panel" role="dialog" aria-label="partitura emergente">
+    <button class="song-egg__close" aria-label="cerrar">×</button>
+    <div class="song-egg__title"><span class="glyph">⌖</span>partitura emergente</div>
+    <p class="song-egg__explain">Cuando pulses <em>play</em>, esta página generará una canción solo para ti — siguiendo el <em>Game of Life</em> de Conway o las reglas de Wolfram, sorteado al azar. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.</p>
+    <div class="song-egg__controls">
+      <button class="song-egg__btn song-egg__play">⏵ play</button>
+      <span class="song-egg__meter">00:00 · 0 notas</span>
+    </div>
+    <button class="song-egg__btn song-egg__download" disabled>↓ descargar .mid</button>
+  </div>
+</div>
+
 </body>
 </html>
