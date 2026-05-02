@@ -135,60 +135,6 @@ button { font-family: inherit; }
   z-index: 5;
 }
 
-/* ━━━━━━━━━━━━ MARGINALIA · tiny technical annotations at the edges ━━━━━━━━━━━━ */
-.edge-marg {
-  position: fixed;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.56rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--paper-faint);
-  z-index: 50;
-  pointer-events: none;
-  font-weight: 500;
-  line-height: 1.7;
-  display: none;
-}
-body.cartografo .edge-marg { display: block; }
-.edge-marg.tl { top: 84px; left: 22px; max-width: 280px; }
-.edge-marg.tr { top: 84px; right: 22px; text-align: right; max-width: 280px; }
-.edge-marg.bl { bottom: 18px; left: 22px; }
-.edge-marg.br { bottom: 60px; right: 22px; text-align: right; }
-.edge-marg .v { color: var(--paper-dim); }
-.edge-marg .ochre { color: var(--ochre); }
-.edge-marg .moss { color: var(--moss-bright); }
-.edge-marg .slate { color: var(--slate-bright); }
-
-/* lang toggle — small, retracted */
-.lang-toggle {
-  position: fixed;
-  top: 56px;
-  right: 22px;
-  z-index: 51;
-  display: inline-flex;
-  border: 1px solid var(--paper-faint);
-  background: rgba(7,9,13,0.6);
-  pointer-events: auto;
-  backdrop-filter: blur(6px);
-}
-.lang-toggle button {
-  padding: 5px 10px;
-  background: transparent;
-  border: none;
-  color: var(--paper-mute);
-  cursor: pointer;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 500;
-  transition: all 0.15s;
-  border-right: 1px solid var(--paper-faint);
-}
-.lang-toggle button:last-child { border-right: none; }
-.lang-toggle button.active { background: var(--ochre); color: var(--night); }
-.lang-toggle button:hover:not(.active) { color: var(--paper); }
-
 /* ━━━━━━━━━━━━ TITLE LOCKUP · top-center, retracted ━━━━━━━━━━━━ */
 .lockup {
   position: fixed;
@@ -416,65 +362,6 @@ body.cartografo .edge-marg { display: block; }
   display: block;
   margin-top: 4px;
 }
-
-/* ━━━━━━━━━━━━ filter chips & entry guides — small, marginalia ━━━━━━━━━━━━ */
-.filters {
-  position: fixed;
-  top: 84px;
-  left: 22px;
-  z-index: 40;
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 500;
-}
-body.cartografo .filters { display: flex; }
-.filters .head { color: var(--paper-faint); margin-bottom: 4px; }
-.filters .chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 4px 8px;
-  cursor: pointer;
-  color: var(--paper-mute);
-  transition: all 0.15s;
-  width: max-content;
-}
-.filters .chip:hover { color: var(--paper); }
-.filters .chip.active { color: var(--paper); border-color: var(--paper-faint); background: rgba(7,9,13,0.5); }
-.filters .chip .glyph { color: var(--ochre); }
-
-/* legend bottom-right, tiny — hidden by default */
-.hud-legend {
-  position: fixed;
-  bottom: 28px;
-  right: 22px;
-  z-index: 45;
-  display: none;
-  gap: 14px;
-  align-items: center;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.54rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--paper-mute);
-  font-weight: 500;
-  pointer-events: none;
-}
-body.cartografo .hud-legend { display: flex; }
-.hud-legend .legend-row { display: inline-flex; gap: 6px; align-items: center; }
-.hud-legend .swatch { width: 7px; height: 7px; border-radius: 50%; }
-.hud-legend .swatch.seedling { background: var(--ochre); box-shadow: 0 0 6px var(--ochre); }
-.hud-legend .swatch.budding { background: var(--moss-bright); box-shadow: 0 0 6px var(--moss-bright); }
-.hud-legend .swatch.evergreen { background: var(--moss); }
-.hud-legend .swatch.author { background: transparent; border: 1.2px solid var(--slate-bright); }
-.hud-legend .swatch.work { background: var(--slate); border-radius: 1px; }
 
 /* ━━━━━━━━━━━━ READ PANEL ━━━━━━━━━━━━ */
 .read-panel {
@@ -807,10 +694,7 @@ body.viaje-zoom #wolfram-bg {
 /* during the viaje, the sky shrinks toward the click point and fades */
 body.viaje-zoom .anchor,
 body.viaje-zoom .canvas,
-body.viaje-zoom .lockup,
-body.viaje-zoom .filters,
-body.viaje-zoom .hud-legend,
-body.viaje-zoom .edge-marg {
+body.viaje-zoom .lockup {
   transform-origin: var(--zoom-x, 50%) var(--zoom-y, 50%);
   transition: transform 1.0s cubic-bezier(0.6, 0, 0.4, 1), opacity 0.9s ease-out;
   transform: scale(2.4);
@@ -1443,17 +1327,15 @@ body.viaje-zoom #life-canvas {
 .back-to-sky:hover { background: var(--paper-ink); color: var(--paper-bg); border-color: var(--paper-ink); }
 body.in-entry .back-to-sky { display: block; }
 
-/* hide sky chrome AND background animations while in entry */
+/* En modo cuaderno (in-entry) ocultamos todo el "cromo" del jardín
+   y todas las capas generativas de fondo · solo queda el papel limpio. */
 body.in-entry .anchor,
 body.in-entry .canvas,
-body.in-entry .filters,
-body.in-entry .hud-legend,
 body.in-entry .lockup,
-body.in-entry .edge-marg,
 body.in-entry #wolfram-bg,
 body.in-entry #life-canvas,
 body.in-entry .bg-grain,
-body.in-entry .bg-vignette { display: none !important; }
+body.in-entry .bg-vignette,
 body.in-entry .bg-gradient { display: none !important; }
 body.in-entry { background: var(--paper-bg); }
 
@@ -1477,44 +1359,16 @@ body.in-entry { background: var(--paper-bg); }
   <a class="brand" id="brand-link">Arch<span class="a">A</span>Life</a>
 </div>
 
-<!-- lang toggle -->
-<div class="lang-toggle">
-  <button class="active" data-lang="es">ES</button>
-  <button data-lang="en">EN</button>
-</div>
-
-<!-- edge marginalia -->
-<div class="edge-marg tl">
-  <div><span class="ochre">⌖</span> wolfram bg · <span id="rule-readout">rule 110 · class iv</span></div>
-  <div>conway · gen <span id="gol-gen" class="v">000</span> · re-seed @ 18</div>
-  <div>graph · <span class="v">21 nodes · 25 edges</span></div>
-</div>
-
-<div class="edge-marg br">
-  <div>chan chan 18 · BC=<span class="ochre">0.2274</span></div>
-  <div>bd_consolidada · 94 · 22 · 741</div>
-  <div><span class="moss">cohorte 0 · pre-pública</span></div>
-</div>
-
-<!-- back to sky -->
+<!-- back to sky · botón de volver al jardín, visible solo en cuaderno -->
 <button class="back-to-sky" id="back-to-sky">← <em>volver al cuaderno</em></button>
 
-<!-- ANCHOR -->
+<!-- ANCHOR · cita-fundacional sobre el patrón Wolfram bg -->
 <div class="anchor" id="anchor">
   <div class="anchor-title">growing societies, again</div>
   <div class="anchor-sub">"if you didn't grow it, you didn't explain it"<span class="attr">epstein · 2006</span></div>
 </div>
 
-<!-- FILTERS -->
-<div class="filters" id="filters">
-  <div class="head">[ filtrar ]</div>
-  <button class="chip active" data-filter="all"><span class="glyph">◉</span> todo</button>
-  <button class="chip" data-filter="entry"><span class="glyph">●</span> entradas</button>
-  <button class="chip" data-filter="author"><span class="glyph">○</span> autores</button>
-  <button class="chip" data-filter="work"><span class="glyph">▪</span> obras</button>
-</div>
-
-<!-- CANVAS -->
+<!-- CANVAS · jardín de nodos · SVG con orbits (vacío), dendrites, edges y nodes -->
 <div class="canvas" id="canvas">
   <svg id="svg" preserveAspectRatio="xMidYMid meet">
     <defs>
@@ -1547,23 +1401,13 @@ body.in-entry { background: var(--paper-bg); }
         <stop offset="100%" stop-color="#e09558" stop-opacity="0"/>
       </radialGradient>
     </defs>
-    <g id="orbits"></g>
     <g id="dendrites"></g>
     <g id="edges"></g>
     <g id="nodes"></g>
   </svg>
 </div>
 
-<!-- legend -->
-<div class="hud-legend">
-  <div class="legend-row"><span class="swatch seedling"></span><span>semilla</span></div>
-  <div class="legend-row"><span class="swatch budding"></span><span>en cultivo</span></div>
-  <div class="legend-row"><span class="swatch evergreen"></span><span>estable</span></div>
-  <div class="legend-row"><span class="swatch author"></span><span>autor</span></div>
-  <div class="legend-row"><span class="swatch work"></span><span>obra</span></div>
-</div>
-
-
+<!-- tooltip · aparece al hacer hover sobre un nodo del jardín -->
 <div class="tooltip" id="tooltip"></div>
 
 <aside class="read-panel" id="panel" aria-hidden="true">
@@ -1598,7 +1442,31 @@ body.in-entry { background: var(--paper-bg); }
 </div>
 
 <script type="module">
-/* ━━━━━━━━━━━━ DATA ━━━━━━━━━━━━ */
+/* ════════════════════════════════════════════════════════════════════════
+   ArchALife · script principal · mapa del archivo
+   ────────────────────────────────────────────────────────────────────────
+   1.  DATA           · carga de data.json + filtro de drafts
+   2.  WOLFRAM_RULES  · catálogo de reglas 1D para el fondo
+   3.  helpers        · $, $$, padId
+   4.  WOLFRAM BG     · IIFE · capa 1 del fondo · automata 1D
+   5.  GAME OF LIFE   · IIFE · capa 3 del fondo · Conway B3/S23
+   6.  GRAPH SETUP    · viewport, refs DOM, layout de nodos
+   7.  DENDRITAS      · crecimiento perpetuo Cordyceps desde el manifiesto
+   8.  PANEL          · openPanel / closePanel + deep links via hash
+   9.  goToEntry      · transición jardín → cuaderno (asíncrona)
+   10. backToSky      · transición cuaderno → jardín (asíncrona)
+   11. renderEntry    · construye el HTML del cuaderno desde el nodo
+   12. CA helpers     · startViajeCA / startBootCA / fadeViajeCanvas
+   13. POPSTATE       · sincroniza historial del navegador con vistas
+   14. PARTITURA      · easter-egg de música generativa Conway/Wolfram
+                       · lazy-load Tone.js + @tonejs/midi
+                       · grabación de notas + export a .mid
+
+   El módulo es un solo `<script type="module">` con top-level await
+   sobre el fetch de data.json. No hay frameworks, no hay build step.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ━━━━━━━━━━━━ 1. DATA ━━━━━━━━━━━━ */
 /* El contenido del jardín vive en data.json. Para añadir o editar entradas,
    autores u obras, edita ese archivo — no toques este HTML. */
 const __archalifeData = await fetch('./data.json').then(r => {
@@ -1657,8 +1525,9 @@ const $ = sel => document.querySelector(sel);
 const $$ = sel => [...document.querySelectorAll(sel)];
 const padId = id => id.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8).padEnd(8, '0');
 
+// viewMode · 'sky' (jardín) | 'transition' (animación intermedia) | 'entry' (cuaderno)
 let viewMode = 'sky';
-let activeFilter = 'all';
+// currentRule · regla Wolfram bg activa en este momento, sólo para introspección
 let currentRule = WOLFRAM_RULES[0];
 
 /* ━━━━━━━━━━━━ WOLFRAM BACKGROUND — slow drift, always on ━━━━━━━━━━━━
@@ -1676,7 +1545,6 @@ let currentRule = WOLFRAM_RULES[0];
   function setRule(r) {
     currentRule = r;
     ruleBits = r.rule.toString(2).padStart(8,'0').split('').map(Number).reverse();
-    document.getElementById('rule-readout').textContent = `${r.name} · ${r.tag}`;
   }
   function randomizeVisualParams() {
     cell = 4 + Math.floor(Math.random() * 7);             // 4-10 px
@@ -1786,7 +1654,6 @@ let currentRule = WOLFRAM_RULES[0];
     }
     grid = next;
     gen++;
-    document.getElementById('gol-gen').textContent = String(gen).padStart(3, '0');
     if (gen >= lifeSpan) seed();
   }
   function draw() {
@@ -1855,7 +1722,6 @@ let currentRule = WOLFRAM_RULES[0];
 let W = window.innerWidth, H = window.innerHeight;
 let ANCHOR_Y = H * 0.62;
 const svg = document.getElementById('svg');
-const orbitsG = document.getElementById('orbits');
 const edgesG = document.getElementById('edges');
 const nodesG = document.getElementById('nodes');
 const canvas = document.getElementById('canvas');
@@ -2174,24 +2040,7 @@ function clearSelection() {
   selected = null;
   nodeEls.forEach(el => el.classList.remove('dimmed'));
   edgeEls.forEach(el => el.classList.remove('highlighted', 'dimmed'));
-  applyFilter();
 }
-function applyFilter() {
-  nodeEls.forEach((el, i) => {
-    const n = nodes[i];
-    const match = activeFilter === 'all' || n.type === activeFilter;
-    el.classList.toggle('dimmed', !match);
-  });
-}
-$$('.filters .chip').forEach(btn => {
-  btn.addEventListener('click', () => {
-    $$('.filters .chip').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeFilter = btn.dataset.filter;
-    clearSelection();
-  });
-});
-
 function relationsFor(id) {
   const out = [];
   EDGES.forEach(e => {
@@ -2207,6 +2056,10 @@ function relationsFor(id) {
   return out;
 }
 
+/* Abre el panel lateral derecho con el contenido de un nodo · construye
+   el HTML inline a partir del nodo, registra listeners para clics en
+   nodos relacionados, y empuja una entrada al historial vía setNodeHash
+   (pushState con #node-id) para que sea compartible y back-navigable. */
 function openPanel(n) {
   panelType.textContent = n.type === 'entry' ? `ENTRY · ${(n.state||'').toUpperCase()}` : n.type.toUpperCase();
   panelUid.textContent = `UID-${padId(n.id).slice(0,6)}`;
@@ -2515,14 +2368,18 @@ function fadeViajeCanvas(targetAlpha, durationMs) {
   });
 }
 
+/* Transición jardín → cuaderno · async, ~3.5 s en total.
+   Fases:
+     1. zoom · escala el viewport hacia el nodo clicado (--zoom-x/y)
+     2. overlay · muestra un autómata 1D viajando (CA fullscreen)
+     3. condense · renderiza el cuaderno bajo el overlay y cambia
+        body.in-entry · oculta todo el "cromo" del jardín
+     4. fade · desvanece el overlay y revela el papel del cuaderno
+   Empuja state {archalife:'entry'} al historial para que atrás del
+   navegador dispare backToSky vía popstate. */
 async function goToEntry(n) {
   if (viewMode !== 'sky') return;
   viewMode = 'transition';
-  // Marcar el historial: empuja una entrada NUEVA con state que dice
-  // "estamos en cuaderno con tal nodo". Mantiene la URL #node-id que
-  // ya estaba, pero ahora atrás del navegador puede distinguir entre
-  // "panel abierto en sky" y "cuaderno". Si el usuario pulsa back,
-  // el listener de popstate llamará a backToSky.
   history.pushState({ archalife: 'entry', nodeId: n.id }, '', '#' + n.id);
   closePanel();
 
@@ -2568,6 +2425,13 @@ async function goToEntry(n) {
   viewMode = 'entry';
 }
 
+/* Transición cuaderno → jardín · async, ~2.6 s en total.
+   Inverso de goToEntry: overlay del CA viajando, tear-down del cuaderno
+   (#view-entry.innerHTML = ''), quita body.in-entry, fade out.
+   Se invoca desde:
+     · botón "← volver al cuaderno" del UI (que dispara history.back)
+     · listener popstate cuando el visitante navega atrás
+   Nunca toca la URL · eso lo gestiona el sistema de history. */
 async function backToSky() {
   if (viewMode !== 'entry') return;
   viewMode = 'transition';
@@ -2642,6 +2506,12 @@ window.addEventListener('popstate', async (e) => {
   // se ocupa de abrir/cerrar el panel según corresponda.
 });
 
+/* Construye el HTML del cuaderno (vista "leer completo") inyectándolo
+   en #view-entry. Lee del nodo: title, subtitle, arxivId, authors,
+   affiliations, body, type, state. Si el nodo no declara esos campos,
+   cae a defaults razonables. Las secciones específicas por nodo
+   (isManifesto, isFEP, isPref, isObsi) son stubs editoriales —
+   cuando un nodo concreto necesita más estructura se añade aquí. */
 function renderEntry(n) {
   const stateLabel = n.state ? n.state.replace('seedling','semilla').replace('budding','en cultivo').replace('evergreen','estable') : '';
   const rels = relationsFor(n.id);
