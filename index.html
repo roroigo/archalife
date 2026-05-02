@@ -1282,21 +1282,28 @@ body.viaje-zoom #life-canvas {
   right: 28px;
   z-index: 100;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--paper-faint);
+  color: var(--paper-mute);
   display: none;
 }
 body.in-entry .song-egg { display: block; }
 .song-egg__teaser {
   cursor: pointer;
   user-select: none;
-  transition: color 0.6s ease, opacity 0.4s ease;
-  opacity: 0.55;
+  transition: color 0.4s ease;
+  padding: 6px 10px;
+  border: 1px solid var(--paper-faint);
+  background: rgba(7, 9, 13, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
-.song-egg__teaser:hover { color: var(--paper-mute); opacity: 1; }
-.song-egg__teaser .glyph { color: var(--ochre); margin-right: 4px; opacity: 0.7; }
+.song-egg__teaser:hover {
+  color: var(--ochre);
+  border-color: var(--ochre-deep);
+}
+.song-egg__teaser .glyph { color: var(--ochre); margin-right: 6px; }
 .song-egg.expanded .song-egg__teaser { display: none; }
 .song-egg__panel {
   display: none;
