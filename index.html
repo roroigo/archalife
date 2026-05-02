@@ -1304,7 +1304,8 @@ body.in-entry .song-egg { display: block; }
   border-color: var(--ochre-deep);
 }
 .song-egg__teaser .glyph { color: var(--ochre); margin-right: 6px; }
-.song-egg.expanded .song-egg__teaser { display: none; }
+.song-egg.expanded .song-egg__teaser,
+.song-egg.minimized .song-egg__teaser { display: none; }
 .song-egg__panel {
   display: none;
   position: relative;
@@ -1376,10 +1377,10 @@ body.in-entry .song-egg { display: block; }
   color: var(--paper-faint);
   letter-spacing: 0.12em;
 }
-.song-egg__close {
+.song-egg__close,
+.song-egg__minimize {
   position: absolute;
   top: 6px;
-  right: 8px;
   background: transparent;
   border: none;
   color: var(--paper-faint);
@@ -1388,7 +1389,61 @@ body.in-entry .song-egg { display: block; }
   line-height: 1;
   padding: 4px;
 }
-.song-egg__close:hover { color: var(--paper-mute); }
+.song-egg__close { right: 8px; }
+.song-egg__minimize { right: 26px; font-size: 0.7rem; padding-top: 7px; }
+.song-egg__close:hover,
+.song-egg__minimize:hover { color: var(--paper-mute); }
+
+/* ─── Mini-reproductor · vista compacta para leer tranquilo ──────
+   Cuando el visitante minimiza, el panel grande se reemplaza por
+   esta barra horizontal pequeña. La música y la grid siguen
+   corriendo en el mini-canvas; clic en el área del canvas o el
+   tiempo expande de vuelta. */
+.song-egg__mini { display: none; }
+.song-egg.minimized .song-egg__panel { display: none; }
+.song-egg.minimized .song-egg__mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 10px;
+  background: rgba(7, 9, 13, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--paper-faint);
+  font-family: 'JetBrains Mono', monospace;
+}
+.song-egg__mini-clickable {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding-right: 4px;
+}
+.song-egg__viz-mini {
+  display: block;
+  width: 38px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.4);
+  image-rendering: pixelated;
+}
+.song-egg__mini-time {
+  font-size: 0.62rem;
+  color: var(--paper-mute);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+.song-egg__mini-btn {
+  background: transparent;
+  border: none;
+  color: var(--paper-mute);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 4px 6px;
+  font-family: inherit;
+  letter-spacing: 0.1em;
+  border-left: 1px solid var(--paper-ghost);
+}
+.song-egg__mini-btn:hover { color: var(--ochre); }
 .song-egg__download {
   width: 100%;
   text-align: center;
@@ -3052,10 +3107,12 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 function updateSongMeter() {
+  if (!songEgg) return;
   const meter = songEgg.querySelector('.song-egg__meter');
-  if (!meter) return;
+  const miniTime = songEgg.querySelector('.song-egg__mini-time');
   const elapsed = songRunning ? (performance.now() / 1000 - songSessionStart) : 0;
-  meter.textContent = `${formatTime(elapsed)} · ${songNotes.length} notas`;
+  if (meter) meter.textContent = `${formatTime(elapsed)} · ${songNotes.length} notas`;
+  if (miniTime) miniTime.textContent = formatTime(elapsed);
 }
 
 function songPlayNote(note, dur, velocity = 0.5) {
@@ -3082,7 +3139,12 @@ let songVizDPR = 1;
 let songVizFrame = null;
 
 function setupSongViz() {
-  songVizCanvas = songEgg && songEgg.querySelector('.song-egg__viz');
+  if (!songEgg) return;
+  // Configurar el canvas activo según el estado del widget. El loop
+  // dibuja siempre en el canvas visible (grande si está expandido,
+  // mini si está minimizado).
+  const isMini = songEgg.classList.contains('minimized');
+  songVizCanvas = songEgg.querySelector(isMini ? '.song-egg__viz-mini' : '.song-egg__viz');
   if (!songVizCanvas) return;
   songVizCtx = songVizCanvas.getContext('2d');
   songVizDPR = window.devicePixelRatio || 1;
@@ -3308,7 +3370,9 @@ function exportSongMidi() {
 function refreshSongUI() {
   const playBtn = songEgg.querySelector('.song-egg__play');
   const dlBtn = songEgg.querySelector('.song-egg__download');
+  const miniPause = songEgg.querySelector('.song-egg__mini-pause');
   if (playBtn) playBtn.textContent = songRunning ? '⏸ pausa' : '⏵ play';
+  if (miniPause) miniPause.textContent = songRunning ? '⏸' : '⏵';
   if (dlBtn) dlBtn.disabled = songNotes.length === 0;
   updateSongMeter();
 }
@@ -3317,27 +3381,70 @@ function refreshSongUI() {
 if (songEgg) {
   const teaser = songEgg.querySelector('.song-egg__teaser');
   const closeBtn = songEgg.querySelector('.song-egg__close');
+  const minimizeBtn = songEgg.querySelector('.song-egg__minimize');
   const playBtn = songEgg.querySelector('.song-egg__play');
   const dlBtn = songEgg.querySelector('.song-egg__download');
+  const miniClickable = songEgg.querySelector('.song-egg__mini-clickable');
+  const miniPauseBtn = songEgg.querySelector('.song-egg__mini-pause');
+  const miniCloseBtn = songEgg.querySelector('.song-egg__mini-close');
 
-  teaser.addEventListener('click', () => {
-    songEgg.classList.add('expanded');
-    refreshSongUI();
-    // configurar canvas ahora que el panel ya tiene dimensiones reales
+  // helper · re-dibuja un frame estático cuando cambias de estado y la
+  // sesión está pausada (sin loop activo) para que el canvas no quede en blanco.
+  function redrawIfNeeded() {
     setupSongViz();
-    // si hay sesión en curso, redibujar el último frame para mostrar el estado
-    if (songVizCtx && (songRunning || songFlashCells.length > 0)) {
+    if (!songVizCtx) return;
+    if (songRunning || songFlashCells.length > 0) {
       if (!songVizFrame) songVizFrame = requestAnimationFrame(songVizLoop);
-    } else if (songVizCtx) {
-      // dibujar el estado actual aunque no haya animación (estado pausado)
+    } else {
       const w = songVizCanvas.width / songVizDPR;
       const h = songVizCanvas.height / songVizDPR;
       if (songEngine === 'conway') drawConwayViz(songVizCtx, w, h);
       else drawWolfViz(songVizCtx, w, h);
     }
+  }
+
+  teaser.addEventListener('click', () => {
+    songEgg.classList.remove('minimized');
+    songEgg.classList.add('expanded');
+    refreshSongUI();
+    redrawIfNeeded();
   });
   closeBtn.addEventListener('click', () => {
     songEgg.classList.remove('expanded');
+    songEgg.classList.remove('minimized');
+  });
+  minimizeBtn.addEventListener('click', () => {
+    // pasa a vista compacta · la música sigue corriendo
+    songEgg.classList.remove('expanded');
+    songEgg.classList.add('minimized');
+    refreshSongUI();
+    redrawIfNeeded();
+  });
+  // expandir desde el mini · clic en el área de canvas/tiempo
+  const miniExpand = () => {
+    songEgg.classList.remove('minimized');
+    songEgg.classList.add('expanded');
+    refreshSongUI();
+    redrawIfNeeded();
+  };
+  miniClickable.addEventListener('click', miniExpand);
+  miniClickable.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); miniExpand(); }
+  });
+  miniPauseBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    try {
+      if (songRunning) stopSong();
+      else await startSong();
+    } catch (err) {
+      console.error('partitura emergente · fallo al iniciar audio', err);
+    }
+  });
+  miniCloseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (songRunning) stopSong();
+    songEgg.classList.remove('expanded');
+    songEgg.classList.remove('minimized');
   });
   playBtn.addEventListener('click', async () => {
     try {
@@ -3366,6 +3473,7 @@ if (songEgg) {
 <div class="song-egg" id="song-egg">
   <div class="song-egg__teaser"><span class="glyph">⌖</span>partitura emergente</div>
   <div class="song-egg__panel" role="dialog" aria-label="partitura emergente">
+    <button class="song-egg__minimize" aria-label="minimizar">—</button>
     <button class="song-egg__close" aria-label="cerrar">×</button>
     <div class="song-egg__title"><span class="glyph">⌖</span>partitura emergente</div>
     <p class="song-egg__explain">Cuando pulses <em>play</em>, esta página generará una canción solo para ti — siguiendo el <em>Game of Life</em> de Conway o las reglas de Wolfram, sorteado al azar. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.</p>
@@ -3375,6 +3483,14 @@ if (songEgg) {
       <span class="song-egg__meter">00:00 · 0 notas</span>
     </div>
     <button class="song-egg__btn song-egg__download" disabled>↓ descargar .mid</button>
+  </div>
+  <div class="song-egg__mini">
+    <div class="song-egg__mini-clickable" role="button" tabindex="0" aria-label="expandir">
+      <canvas class="song-egg__viz-mini" aria-hidden="true"></canvas>
+      <span class="song-egg__mini-time">00:00</span>
+    </div>
+    <button class="song-egg__mini-btn song-egg__mini-pause" aria-label="pausa">⏸</button>
+    <button class="song-egg__mini-btn song-egg__mini-close" aria-label="cerrar">×</button>
   </div>
 </div>
 
