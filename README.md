@@ -16,7 +16,7 @@ reglas reales de Conway (B3/S23) — generación a generación, igual que en
 cualquier implementación del juego.
 
 **Estado:** pre-pública · cohorte 0 · v0.4.x-α  
-**Sitio:** [roroigo.github.io/archalife](https://roroigo.github.io/archalife/)
+**Sitio:** [archalife.github.io/archalife](https://archalife.github.io/archalife/)
 
 ---
 
@@ -39,4 +39,4 @@ Gracias por respetar la cosecha.
 
 ---
 
-© roroigo · todos los derechos reservados (de momento)
+© archalife · todos los derechos reservados (de momento)
