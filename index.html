@@ -308,6 +308,12 @@ body.cartografo .edge-marg { display: block; }
   stroke: rgba(224, 149, 88, 0.6);
   stroke-width: 0.5;
 }
+/* Variación cromática · ramas ocasionales en musgo o pizarra,
+   para romper la monotonía visual de un solo color. Resto sigue ocre. */
+.dendrite.moss  { stroke: rgba(168, 194, 128, 0.30); }
+.dendrite.slate { stroke: rgba(154, 176, 200, 0.28); }
+.dendrite.thin  { stroke-width: 0.5; }
+.dendrite.thick { stroke-width: 0.95; }
 /* Esporodios · puntos brillantes en las puntas, como cuerpos fructíferos
    de Cordyceps. De aquí brotan nuevas ramas con el tiempo. */
 .dendrite-spore {
@@ -1622,14 +1628,29 @@ if (!__isProduction) {
 }
 
 const WOLFRAM_RULES = [
+  // Class IV · estructuras complejas, computación universal
   { rule: 110, name: 'rule 110', tag: 'class iv · turing-complete', seed: 'edge' },
   { rule: 54,  name: 'rule 54',  tag: 'class iv · localized structures', seed: 'random' },
-  { rule: 30,  name: 'rule 30',  tag: 'class iii · chaotic', seed: 'center' },
-  { rule: 90,  name: 'rule 90',  tag: 'class ii · sierpinski', seed: 'center' },
-  { rule: 150, name: 'rule 150', tag: 'class ii · xor-fractal', seed: 'center' },
-  { rule: 22,  name: 'rule 22',  tag: 'class iii · sparse', seed: 'center' },
   { rule: 62,  name: 'rule 62',  tag: 'class iv · complex', seed: 'random' },
   { rule: 124, name: 'rule 124', tag: 'class iv · complex', seed: 'center' },
+  { rule: 137, name: 'rule 137', tag: 'class iv · mirror of 110', seed: 'edge' },
+  { rule: 193, name: 'rule 193', tag: 'class iv · complex', seed: 'random' },
+  // Class III · caos, bordes irregulares
+  { rule: 30,  name: 'rule 30',  tag: 'class iii · chaotic', seed: 'center' },
+  { rule: 22,  name: 'rule 22',  tag: 'class iii · sparse', seed: 'center' },
+  { rule: 45,  name: 'rule 45',  tag: 'class iii · chaotic', seed: 'random' },
+  { rule: 73,  name: 'rule 73',  tag: 'class iii · chaotic', seed: 'random' },
+  { rule: 86,  name: 'rule 86',  tag: 'class iii · chaotic', seed: 'random' },
+  { rule: 89,  name: 'rule 89',  tag: 'class iii · chaotic', seed: 'random' },
+  { rule: 126, name: 'rule 126', tag: 'class iii · chaotic', seed: 'center' },
+  { rule: 161, name: 'rule 161', tag: 'class iii · chaotic', seed: 'center' },
+  // Class II · estructuras periódicas, fractales
+  { rule: 90,  name: 'rule 90',  tag: 'class ii · sierpinski', seed: 'center' },
+  { rule: 150, name: 'rule 150', tag: 'class ii · xor-fractal', seed: 'center' },
+  { rule: 60,  name: 'rule 60',  tag: 'class ii · xor-fractal', seed: 'center' },
+  { rule: 18,  name: 'rule 18',  tag: 'class ii · linear fractal', seed: 'center' },
+  { rule: 184, name: 'rule 184', tag: 'class ii · traffic', seed: 'random' },
+  { rule: 41,  name: 'rule 41',  tag: 'class ii/iii · mixed', seed: 'random' },
 ];
 
 const $ = sel => document.querySelector(sel);
@@ -1640,25 +1661,37 @@ let viewMode = 'sky';
 let activeFilter = 'all';
 let currentRule = WOLFRAM_RULES[0];
 
-/* ━━━━━━━━━━━━ WOLFRAM BACKGROUND — slow drift, always on ━━━━━━━━━━━━ */
+/* ━━━━━━━━━━━━ WOLFRAM BACKGROUND — slow drift, always on ━━━━━━━━━━━━
+   Cada vez que se re-seedea (cambio de regla) también varían cell size,
+   step interval y opacidad globales del canvas. Así la misma regla 110
+   nunca se ve idéntica entre sesiones · multiplica la variedad sin
+   añadir reglas nuevas. La regla se elige aleatoriamente del catálogo
+   en lugar de rotar secuencialmente. */
 (function initWolframBg() {
   const c = document.getElementById('wolfram-bg');
   const ctx = c.getContext('2d');
-  const cell = 6;
-  let cols, rows, history, ruleBits, ruleIdx = 0, gen = 0;
+  let cell = 6;
+  let stepIntervalMs = 260;
+  let cols, rows, history, ruleBits, gen = 0;
   function setRule(r) {
     currentRule = r;
     ruleBits = r.rule.toString(2).padStart(8,'0').split('').map(Number).reverse();
     document.getElementById('rule-readout').textContent = `${r.name} · ${r.tag}`;
   }
+  function randomizeVisualParams() {
+    cell = 4 + Math.floor(Math.random() * 7);             // 4-10 px
+    stepIntervalMs = 180 + Math.floor(Math.random() * 220); // 180-400 ms
+    c.style.opacity = (0.10 + Math.random() * 0.10).toFixed(2); // 0.10-0.20
+  }
   function resize() {
     c.width = window.innerWidth; c.height = window.innerHeight;
-    cols = Math.ceil(c.width / cell);
-    rows = Math.ceil(c.height / cell);
     seed();
   }
   function seed() {
-    const r = WOLFRAM_RULES[ruleIdx % WOLFRAM_RULES.length];
+    randomizeVisualParams();
+    cols = Math.ceil(c.width / cell);
+    rows = Math.ceil(c.height / cell);
+    const r = WOLFRAM_RULES[Math.floor(Math.random() * WOLFRAM_RULES.length)];
     setRule(r);
     history = [];
     let row = new Array(cols).fill(0);
@@ -1679,7 +1712,6 @@ let currentRule = WOLFRAM_RULES[0];
     if (history.length > rows) history.shift();
     gen++;
     if (gen >= rows + 40) {
-      ruleIdx++;
       seed();
     }
   }
@@ -1699,7 +1731,7 @@ let currentRule = WOLFRAM_RULES[0];
   }
   let last = 0;
   function loop(t) {
-    if (t - last > 260) { step(); draw(); last = t; }
+    if (t - last > stepIntervalMs) { step(); draw(); last = t; }
     requestAnimationFrame(loop);
   }
   resize();
@@ -1708,20 +1740,34 @@ let currentRule = WOLFRAM_RULES[0];
   requestAnimationFrame(loop);
 })();
 
-/* ━━━━━━━━━━━━ GAME OF LIFE — visible & alive ━━━━━━━━━━━━ */
+/* ━━━━━━━━━━━━ GAME OF LIFE — visible & alive ━━━━━━━━━━━━
+   Igual que Wolfram bg · cada re-seed (cada 14-22 generaciones)
+   varía cell size, densidad inicial, opacidad y tempo. La sopa de
+   células nunca se ve igual entre re-seedings consecutivos. */
 (function initLife() {
   const c = document.getElementById('life-canvas');
   const ctx = c.getContext('2d');
-  const cell = 9;
+  let cell = 9;
+  let density = 0.14;
+  let stepIntervalMs = 720;
+  let lifeSpan = 18;
   let cols, rows, grid, gen = 0;
+  function randomizeVisualParams() {
+    cell = 6 + Math.floor(Math.random() * 7);            // 6-12 px
+    density = 0.10 + Math.random() * 0.10;               // 0.10-0.20
+    stepIntervalMs = 540 + Math.floor(Math.random() * 360); // 540-900 ms
+    lifeSpan = 14 + Math.floor(Math.random() * 9);       // 14-22 gens
+    c.style.opacity = (0.12 + Math.random() * 0.10).toFixed(2); // 0.12-0.22
+  }
   function resize() {
     c.width = window.innerWidth; c.height = window.innerHeight;
-    cols = Math.ceil(c.width / cell);
-    rows = Math.ceil(c.height / cell);
     seed();
   }
   function seed() {
-    grid = Array.from({length: rows}, () => Array.from({length: cols}, () => Math.random() < 0.14 ? 1 : 0));
+    randomizeVisualParams();
+    cols = Math.ceil(c.width / cell);
+    rows = Math.ceil(c.height / cell);
+    grid = Array.from({length: rows}, () => Array.from({length: cols}, () => Math.random() < density ? 1 : 0));
     gen = 0;
   }
   function step() {
@@ -1741,7 +1787,7 @@ let currentRule = WOLFRAM_RULES[0];
     grid = next;
     gen++;
     document.getElementById('gol-gen').textContent = String(gen).padStart(3, '0');
-    if (gen >= 18) seed();
+    if (gen >= lifeSpan) seed();
   }
   function draw() {
     ctx.clearRect(0, 0, c.width, c.height);
@@ -1756,7 +1802,7 @@ let currentRule = WOLFRAM_RULES[0];
   }
   let last = 0;
   function loop(t) {
-    if (t - last > 720) { step(); draw(); last = t; }
+    if (t - last > stepIntervalMs) { step(); draw(); last = t; }
     requestAnimationFrame(loop);
   }
   resize();
@@ -1911,7 +1957,11 @@ function dendriteSporeAt(x, y, generation = 0) {
 }
 
 function growBranchFrom(originX, originY, angle, len, segs, generation = 0) {
-  // construir un path orgánico con wobble; devolver la punta final
+  // construir un path orgánico con wobble; devolver la punta final.
+  // Cada rama tiene su propio factor de wobble · entre 0.20 y 0.55 ·
+  // y su propia variación cromática y de grosor. Esto rompe la
+  // monotonía visual sin perder coherencia (el ocre sigue dominando).
+  const wobbleFactor = 0.20 + Math.random() * 0.35;
   let x = originX, y = originY;
   const pts = [`M ${x} ${y}`];
   let dx = Math.cos(angle), dy = Math.sin(angle);
@@ -1919,7 +1969,7 @@ function growBranchFrom(originX, originY, angle, len, segs, generation = 0) {
   const seed = Math.random() * 100;
   for (let s = 0; s < segs; s++) {
     const wobble = Math.sin(seed * 0.7 + s * 1.3) * 0.55;
-    const a = Math.atan2(dy, dx) + wobble * 0.35;
+    const a = Math.atan2(dy, dx) + wobble * wobbleFactor;
     dx = Math.cos(a); dy = Math.sin(a);
     const tx = x + dx * segLen;
     const ty = y + dy * segLen;
@@ -1931,10 +1981,22 @@ function growBranchFrom(originX, originY, angle, len, segs, generation = 0) {
   }
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   p.setAttribute('d', pts.join(' '));
-  p.setAttribute('class', 'dendrite' + (generation > 1 ? ' tip' : ''));
+  // Variación cromática · 88% ocre, 8% musgo, 4% pizarra
+  const colorRoll = Math.random();
+  let colorClass = '';
+  if (colorRoll < 0.08) colorClass = 'moss';
+  else if (colorRoll < 0.12) colorClass = 'slate';
+  // Variación de grosor · 70% normal, 18% delgado, 12% grueso
+  const widthRoll = Math.random();
+  let widthClass = '';
+  if (widthRoll < 0.18) widthClass = 'thin';
+  else if (widthRoll < 0.30) widthClass = 'thick';
+  const tipClass = generation > 1 ? ' tip' : '';
+  p.setAttribute('class', `dendrite${tipClass}${colorClass ? ' ' + colorClass : ''}${widthClass ? ' ' + widthClass : ''}`);
   dendritesG.appendChild(p);
   const totalLen = p.getTotalLength ? p.getTotalLength() : 400;
-  const drawDur = 2.2 + Math.random() * 0.6;
+  // Duración del crecimiento · varía entre 1.8 y 3.4 s
+  const drawDur = 1.8 + Math.random() * 1.6;
   p.style.strokeDasharray = totalLen;
   p.style.strokeDashoffset = totalLen;
   p.style.transition = `stroke-dashoffset ${drawDur}s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 1.4s ease`;
