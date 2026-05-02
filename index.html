@@ -210,6 +210,17 @@ body.cartografo .edge-marg { display: block; }
   font-variation-settings: 'opsz' 24, 'SOFT' 80;
 }
 .lockup .pretitle .glyph { color: var(--ochre); margin-right: 4px; }
+
+/* Glider de Conway en miniatura · usado como logo inline.
+   currentColor → hereda del contexto · sin animación, mejor sólido. */
+.glyph-glider {
+  width: 0.85em;
+  height: 0.85em;
+  display: inline-block;
+  vertical-align: -0.1em;
+  fill: currentColor;
+}
+.glyph-glider.ochre { fill: var(--ochre); }
 .lockup .brand {
   font-family: 'Fraunces', serif;
   font-style: italic;
@@ -1292,7 +1303,7 @@ body.in-entry { background: var(--paper-bg); }
 
 <!-- title lockup -->
 <div class="lockup">
-  <div class="pretitle"><span class="glyph">⌖</span> <em>prehistoric artificial life</em></div>
+  <div class="pretitle"><svg class="glyph-glider ochre" viewBox="0 0 9 9" aria-hidden="true"><rect x="3" y="0" width="2" height="2"/><rect x="6" y="3" width="2" height="2"/><rect x="0" y="6" width="2" height="2"/><rect x="3" y="6" width="2" height="2"/><rect x="6" y="6" width="2" height="2"/></svg> <em>prehistoric artificial life</em></div>
   <a class="brand" id="brand-link">Arch<span class="a">A</span>Life</a>
 </div>
 
@@ -1406,7 +1417,7 @@ body.in-entry { background: var(--paper-bg); }
 <div id="boot">
   <canvas id="boot-canvas"></canvas>
   <div class="boot-inner">
-    <div class="boot-title"><span style="color:var(--ochre);">⌖</span> Arch<span class="a">A</span>Life</div>
+    <div class="boot-title"><svg class="glyph-glider ochre" viewBox="0 0 9 9" aria-hidden="true"><rect x="3" y="0" width="2" height="2"/><rect x="6" y="3" width="2" height="2"/><rect x="0" y="6" width="2" height="2"/><rect x="3" y="6" width="2" height="2"/><rect x="6" y="6" width="2" height="2"/></svg> Arch<span class="a">A</span>Life</div>
     <div class="boot-meta">growing societies, again · v0.4.2-α</div>
   </div>
 </div>
