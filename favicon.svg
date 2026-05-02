@@ -3,19 +3,31 @@
   <rect width="32" height="32" rx="6" fill="#07090d"/>
 
   <!--
-    Glider de Conway · 5 células que se desplazan en diagonal.
+    Glider de Conway · 5 células que vuelan en diagonal NW→SE.
     Patrón canónico (3x3 grid):
         . X .
         . . X
         X X X
-    Cada célula es un cuadrado de 7×7 con 1px de aire entre ellas,
-    colocadas sobre la mitad inferior-derecha para sugerir movimiento NW→SE.
+
+    Las cinco celdas viajan dentro del grupo, y el grupo se traslada
+    en pasos discretos para imitar el avance generacional del Conway:
+    cada 4 generaciones, el glider se ha desplazado 1 celda diagonal.
+    Aquí simplificamos a un translate cíclico que cruza el icono
+    cada ~4 segundos. Los navegadores que no soportan SMIL muestran
+    el primer fotograma estático, que ya es un glider reconocible.
   -->
   <g fill="#e09558">
-    <rect x="12" y="5"  width="7" height="7" rx="1"/>
-    <rect x="20" y="13" width="7" height="7" rx="1"/>
-    <rect x="4"  y="21" width="7" height="7" rx="1"/>
-    <rect x="12" y="21" width="7" height="7" rx="1"/>
-    <rect x="20" y="21" width="7" height="7" rx="1"/>
+    <rect x="8"  y="0"  width="7" height="7" rx="1"/>
+    <rect x="16" y="8"  width="7" height="7" rx="1"/>
+    <rect x="0"  y="16" width="7" height="7" rx="1"/>
+    <rect x="8"  y="16" width="7" height="7" rx="1"/>
+    <rect x="16" y="16" width="7" height="7" rx="1"/>
+    <animateTransform
+      attributeName="transform"
+      type="translate"
+      values="-25 -25; -19 -19; -13 -13; -7 -7; -1 -1; 5 5; 11 11; 17 17; 23 23; 29 29; 35 35"
+      dur="4s"
+      calcMode="discrete"
+      repeatCount="indefinite"/>
   </g>
 </svg>
