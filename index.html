@@ -1286,18 +1286,18 @@ body.viaje-zoom #life-canvas {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--paper-mute);
-  display: none;
+  /* Visible en TODAS las páginas · landing, cuaderno y transiciones.
+     La música y la sesión persisten al cambiar de vista. */
 }
-body.in-entry .song-egg { display: block; }
 .song-egg__teaser {
   cursor: pointer;
   user-select: none;
-  transition: color 0.4s ease;
+  transition: color 0.4s ease, border-color 0.4s ease;
   padding: 6px 10px;
   border: 1px solid var(--paper-faint);
-  background: rgba(7, 9, 13, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(7, 9, 13, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .song-egg__teaser:hover {
   color: var(--ochre);
@@ -3456,13 +3456,10 @@ if (songEgg) {
   });
   dlBtn.addEventListener('click', exportSongMidi);
 
-  // si el visitante sale del cuaderno, pausamos pero no perdemos las notas
-  const observer = new MutationObserver(() => {
-    if (!document.body.classList.contains('in-entry') && songRunning) {
-      stopSong();
-    }
-  });
-  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  // El reproductor es persistente: la música puede empezar en el landing,
+  // continuar durante la transición al cuaderno, sostenerse durante toda
+  // la lectura, y mantenerse al volver al jardín. La sesión MIDI vive
+  // hasta que el visitante pulse "cerrar" o cambie de pestaña.
 
   // tick visual de meter cada segundo aunque no haya notas nuevas
   setInterval(() => { if (songRunning) updateSongMeter(); }, 1000);
