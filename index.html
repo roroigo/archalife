@@ -1279,7 +1279,8 @@ body.viaje-zoom #life-canvas {
 .song-egg {
   position: fixed;
   bottom: 22px;
-  right: 28px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 100;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.62rem;
@@ -1287,11 +1288,14 @@ body.viaje-zoom #life-canvas {
   text-transform: uppercase;
   color: var(--paper-mute);
   /* Visible en TODAS las páginas · landing, cuaderno y transiciones.
-     La música y la sesión persisten al cambiar de vista. */
+     Centrado abajo · la zona libre del layout (menú a izquierda,
+     marginalia a derecha). La música y la sesión persisten al
+     cambiar de vista. */
 }
 .song-egg__teaser {
   cursor: pointer;
   user-select: none;
+  white-space: nowrap;
   transition: color 0.4s ease, border-color 0.4s ease;
   padding: 6px 10px;
   border: 1px solid var(--paper-faint);
