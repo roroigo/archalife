@@ -444,61 +444,6 @@ body.cartografo .filters { display: flex; }
 .filters .chip.active { color: var(--paper); border-color: var(--paper-faint); background: rgba(7,9,13,0.5); }
 .filters .chip .glyph { color: var(--ochre); }
 
-/* entry guides — single line of text-buttons */
-.entry-guides {
-  position: fixed;
-  bottom: 36px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 4px;
-  z-index: 45;
-  align-items: center;
-  font-family: 'Fraunces', serif;
-  pointer-events: auto;
-  opacity: 0.55;
-  transition: opacity 0.6s ease;
-}
-.entry-guides:hover { opacity: 1; }
-.entry-guides .guide-label {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-size: 0.78rem;
-  letter-spacing: 0;
-  color: var(--paper-faint);
-  align-self: center;
-  padding-right: 14px;
-  border-right: 1px solid var(--paper-faint);
-  margin-right: 6px;
-  font-weight: 350;
-  font-variation-settings: 'opsz' 24, 'SOFT' 80;
-}
-.entry-btn {
-  background: transparent;
-  border: none;
-  color: var(--paper-soft);
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-size: 1rem;
-  font-weight: 400;
-  cursor: pointer;
-  padding: 6px 12px;
-  transition: color 0.2s;
-  white-space: nowrap;
-  font-variation-settings: 'opsz' 24, 'SOFT' 60;
-}
-.entry-btn:hover { color: var(--ochre-bright); }
-.entry-btn .num {
-  font-family: 'JetBrains Mono', monospace;
-  font-style: normal;
-  font-size: 0.56rem;
-  letter-spacing: 0.18em;
-  color: var(--ochre);
-  margin-right: 8px;
-  font-weight: 500;
-  vertical-align: 2px;
-}
-
 /* legend bottom-right, tiny — hidden by default */
 .hud-legend {
   position: fixed;
@@ -858,7 +803,6 @@ body.viaje-zoom .anchor,
 body.viaje-zoom .canvas,
 body.viaje-zoom .lockup,
 body.viaje-zoom .filters,
-body.viaje-zoom .entry-guides,
 body.viaje-zoom .hud-legend,
 body.viaje-zoom .edge-marg {
   transform-origin: var(--zoom-x, 50%) var(--zoom-y, 50%);
@@ -1297,7 +1241,9 @@ body.viaje-zoom #life-canvas {
   user-select: none;
   white-space: nowrap;
   transition: color 0.4s ease, border-color 0.4s ease;
-  padding: 6px 10px;
+  padding: 9px 22px;
+  width: clamp(280px, 50vw, 520px);
+  text-align: center;
   border: 1px solid var(--paper-faint);
   background: rgba(7, 9, 13, 0.78);
   backdrop-filter: blur(8px);
@@ -1326,7 +1272,10 @@ body.viaje-zoom #life-canvas {
   text-transform: none;
   color: var(--paper-mute);
 }
-.song-egg.expanded .song-egg__panel { display: block; }
+.song-egg.expanded .song-egg__panel {
+  display: block;
+  width: clamp(320px, 70vw, 720px);
+}
 .song-egg__title {
   font-family: 'Fraunces', serif;
   font-style: italic;
@@ -1408,13 +1357,17 @@ body.viaje-zoom #life-canvas {
 .song-egg.minimized .song-egg__mini {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px 6px 10px;
+  gap: 14px;
+  padding: 8px 10px 8px 14px;
+  width: clamp(280px, 50vw, 520px);
   background: rgba(7, 9, 13, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--paper-faint);
   font-family: 'JetBrains Mono', monospace;
+}
+.song-egg.minimized .song-egg__mini-clickable {
+  flex: 1;
 }
 .song-egg__mini-clickable {
   display: flex;
@@ -1454,8 +1407,9 @@ body.viaje-zoom #life-canvas {
   margin-top: 4px;
 }
 @media (max-width: 600px) {
-  .song-egg { bottom: 18px; right: 18px; }
-  .song-egg__panel { width: calc(100vw - 36px); max-width: 280px; }
+  .song-egg { bottom: 18px; }
+  .song-egg__teaser { width: calc(100vw - 36px); max-width: 420px; }
+  .song-egg.expanded .song-egg__panel { width: calc(100vw - 36px); max-width: 520px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .song-egg__teaser { transition: none; }
@@ -1487,7 +1441,6 @@ body.in-entry .back-to-sky { display: block; }
 body.in-entry .anchor,
 body.in-entry .canvas,
 body.in-entry .filters,
-body.in-entry .entry-guides,
 body.in-entry .hud-legend,
 body.in-entry .lockup,
 body.in-entry .edge-marg,
@@ -1604,11 +1557,6 @@ body.in-entry { background: var(--paper-bg); }
   <div class="legend-row"><span class="swatch work"></span><span>obra</span></div>
 </div>
 
-<!-- entry guides -->
-<div class="entry-guides" id="entry-guides">
-  <span class="guide-label"><em>la raíz</em></span>
-  <button class="entry-btn" data-id="manifiesto"><span class="num">○</span>Manifiesto</button>
-</div>
 
 <div class="tooltip" id="tooltip"></div>
 
@@ -2275,16 +2223,6 @@ function syncPanelFromHash() {
 }
 window.addEventListener('hashchange', syncPanelFromHash);
 document.getElementById('btn-close').addEventListener('click', closePanel);
-
-$$('.entry-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const id = btn.dataset.id;
-    const node = NODES.find(n => n.id === id);
-    if (!node || viewMode !== 'sky') return;
-    selectNode(nodeIdx[id]);
-    goToEntry(node);
-  });
-});
 
 document.getElementById('btn-read-full').addEventListener('click', () => {
   if (selected === null) return;
