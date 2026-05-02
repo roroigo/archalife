@@ -23,6 +23,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ArchALife · prehistoric artificial life</title>
+
+<!-- identidad / SEO -->
+<meta name="description" content="ArchALife · un jardín de pasados posibles. Entradas, autores y obras que crecen sobre capas generativas — autómatas de Wolfram, Conway, tipografías y silencio.">
+<meta name="author" content="roroigo">
+<meta name="theme-color" content="#07090d">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<!-- Open Graph (Facebook, WhatsApp, LinkedIn, Slack…) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://roroigo.github.io/archalife/">
+<meta property="og:title" content="ArchALife · prehistoric artificial life">
+<meta property="og:description" content="Un jardín de pasados posibles. Entradas, autores y obras sobre capas generativas — Wolfram, Conway, tipografías y silencio.">
+<meta property="og:image" content="https://roroigo.github.io/archalife/og-image.svg">
+<meta property="og:locale" content="es_ES">
+
+<!-- Twitter / X Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ArchALife · prehistoric artificial life">
+<meta name="twitter:description" content="Un jardín de pasados posibles. Entradas, autores y obras sobre capas generativas.">
+<meta name="twitter:image" content="https://roroigo.github.io/archalife/og-image.svg">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&family=JetBrains+Mono:wght@400;500;600&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -60,6 +81,22 @@ body {
   overflow: hidden;
 }
 button { font-family: inherit; }
+
+/* ━━━━━━━━━━━━ ACCESSIBILITY · respect "reduce motion" ━━━━━━━━━━━━ */
+/* Si el visitante ha activado "Reducir movimiento" en su sistema operativo,
+   apagamos las capas animadas de fondo y casi todas las transiciones.
+   El jardín sigue legible — solo deja de respirar. */
+@media (prefers-reduced-motion: reduce) {
+  #wolfram-bg, #life-canvas {
+    display: none !important;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* ━━━━━━━━━━━━ COMPLEXITY LAYERS — the protagonist ━━━━━━━━━━━━ */
 /* Layer 1: Wolfram — barely there, like rain on a window */
@@ -1392,8 +1429,27 @@ const __archalifeData = await fetch('./data.json').then(r => {
   if (!r.ok) throw new Error(`No se pudo cargar data.json (${r.status})`);
   return r.json();
 });
-const NODES = __archalifeData.nodes;
-const EDGES = __archalifeData.edges;
+
+/* ━━━━━━━━━━━━ MODO DRAFT ━━━━━━━━━━━━
+   En producción (sitio publicado en roroigo.github.io o dominio propio)
+   los nodos marcados "draft": true se ocultan. En cualquier otro entorno
+   — preview local, claude code, localhost — se muestran todos para poder
+   editarlos antes de publicar. Los edges que conectan a nodos ocultos
+   también se filtran para no dejar aristas huérfanas. */
+const __isProduction = /\.github\.io$/.test(location.hostname)
+  || location.hostname === 'archalife.com'
+  || location.hostname === 'www.archalife.com';
+const NODES = __isProduction
+  ? __archalifeData.nodes.filter(n => !n.draft)
+  : __archalifeData.nodes;
+const __publicIds = new Set(NODES.map(n => n.id));
+const EDGES = __archalifeData.edges.filter(
+  e => __publicIds.has(e.source) && __publicIds.has(e.target)
+);
+if (!__isProduction) {
+  console.info(`%c⌖ ArchALife · modo borrador`, 'color: #e09558; font-weight: 600',
+    `\nEntorno: ${location.hostname || 'local'} · ${NODES.length} nodos visibles (incluyendo drafts)`);
+}
 
 const WOLFRAM_RULES = [
   { rule: 110, name: 'rule 110', tag: 'class iv · turing-complete', seed: 'edge' },
@@ -1897,6 +1953,7 @@ function openPanel(n) {
   `;
   panel.classList.add('open');
   panel.setAttribute('aria-hidden', 'false');
+  setNodeHash(n.id);
 
   panelBody.querySelectorAll('li[data-id]').forEach(li => {
     li.addEventListener('click', () => {
@@ -1913,7 +1970,33 @@ function closePanel() {
   panel.classList.remove('open');
   panel.setAttribute('aria-hidden', 'true');
   clearSelection();
+  setNodeHash(null);
 }
+
+/* ━━━━━━━━━━━━ DEEP LINKS · #node-id en la URL ━━━━━━━━━━━━ */
+/* Cada nodo abierto se refleja en el hash de la URL para poder compartirlo
+   o conservar el estado al recargar. Usamos replaceState para no llenar
+   el historial del navegador a cada apertura. */
+function setNodeHash(id) {
+  const target = id ? '#' + id : window.location.pathname + window.location.search;
+  if (window.location.hash !== (id ? '#' + id : '')) {
+    history.replaceState(null, '', target);
+  }
+}
+function syncPanelFromHash() {
+  const id = window.location.hash.slice(1);
+  if (!id) {
+    if (panel.classList.contains('open')) closePanel();
+    return;
+  }
+  const idx = nodeIdx[id];
+  if (idx === undefined) return; // hash apunta a un nodo que no existe — ignorar
+  if (viewMode === 'sky') {
+    selectNode(idx);
+    openPanel(NODES[idx]);
+  }
+}
+window.addEventListener('hashchange', syncPanelFromHash);
 document.getElementById('btn-close').addEventListener('click', closePanel);
 
 $$('.entry-btn').forEach(btn => {
@@ -2536,64 +2619,9 @@ function drawNetworkHero(ctx, c) {
   }
   pts.forEach(p => { ctx.fillStyle = 'rgba(224, 149, 88, 0.7)'; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, Math.PI*2); ctx.fill(); });
 }
-</script>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<script type="text/babel" src="tweaks-panel.jsx"></script>
-<div id="tweaks-mount"></div>
-<script type="text/babel">
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "zen": true,
-  "wolframOpacity": 0.14,
-  "lifeOpacity": 0.18,
-  "showLabels": "hover",
-  "showOrbits": false,
-  "cartografo": false
-}/*EDITMODE-END*/;
 
-function App() {
-  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
-
-  React.useEffect(() => {
-    const wb = document.getElementById('wolfram-bg');
-    if (wb) wb.style.opacity = tweaks.zen ? Math.min(tweaks.wolframOpacity, 0.18) : tweaks.wolframOpacity;
-    const lc = document.getElementById('life-canvas');
-    if (lc) lc.style.opacity = tweaks.zen ? Math.min(tweaks.lifeOpacity, 0.22) : tweaks.lifeOpacity;
-    document.querySelectorAll('.glabel').forEach(el => {
-      if (tweaks.showLabels === 'always') el.classList.add('always');
-      else el.classList.remove('always');
-    });
-    const orb = document.getElementById('orbits');
-    if (orb) orb.style.display = (tweaks.showOrbits || tweaks.cartografo) ? '' : 'none';
-    document.body.classList.toggle('cartografo', tweaks.cartografo);
-    document.body.classList.toggle('zen', tweaks.zen);
-  }, [tweaks]);
-
-  return (
-    <TweaksPanel title="Tweaks · ArchALife">
-      <TweakSection title="Modo">
-        <TweakToggle label="Zen · silencio visual" value={tweaks.zen} onChange={v => setTweak('zen', v)} />
-        <TweakToggle label="Cartógrafo · marginalia + filtros" value={tweaks.cartografo} onChange={v => setTweak('cartografo', v)} />
-      </TweakSection>
-      <TweakSection title="Capas de complejidad">
-        <TweakSlider label="Wolfram · opacidad" min={0} max={0.8} step={0.02} value={tweaks.wolframOpacity} onChange={v => setTweak('wolframOpacity', v)} />
-        <TweakSlider label="Conway · opacidad" min={0} max={1} step={0.05} value={tweaks.lifeOpacity} onChange={v => setTweak('lifeOpacity', v)} />
-      </TweakSection>
-      <TweakSection title="Grafo">
-        <TweakRadio
-          label="Etiquetas"
-          value={tweaks.showLabels}
-          options={[{value:'hover',label:'En hover'},{value:'always',label:'Siempre'}]}
-          onChange={v => setTweak('showLabels', v)}
-        />
-        <TweakToggle label="Anillos orbitales" value={tweaks.showOrbits} onChange={v => setTweak('showOrbits', v)} />
-      </TweakSection>
-    </TweaksPanel>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('tweaks-mount')).render(<App />);
+/* Si la URL trae un #node-id, abrir ese nodo nada más cargar. */
+syncPanelFromHash();
 </script>
 </body>
 </html>
