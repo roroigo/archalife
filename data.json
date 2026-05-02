@@ -3,7 +3,17 @@
     {
       "id": "manifiesto",
       "type": "entry",
-      "label": "Sociedades artificiales y memoria histórica profunda",
+      "label": "Sociedades Artificiales",
+      "title": "Sociedades artificiales y memoria histórica profunda",
+      "subtitle": "Una posición desde la arqueología del Cono Sur",
+      "arxivId": "archalife.SOCART.001",
+      "authors": [
+        { "name": "R. Mendoza-Sánchez", "sup": "a,1" }
+      ],
+      "affiliations": [
+        { "sup": "a", "text": "departamento de ciencias sociales · universidad católica de temuco · concepción, chile" },
+        { "sup": "1", "text": "ARKdrone · ArkeoAI" }
+      ],
       "state": "budding",
       "featured": true,
       "body": "<em>Una posición desde la arqueología del Cono Sur</em> · Mendoza-Sánchez · <em>arxiv:archalife.SOCART.001v1</em> · abril 2026<br><br>El término <em>sociedad artificial</em>, popularizado por Epstein y Axtell (1996) en el contexto del modelado basado en agentes (ABM), contiene una contradicción semántica productiva. <em>Artificial</em>, del latín <em>ars + facere</em>, designa lo hecho por arte, lo construido. En sentido riguroso, toda sociedad humana es artificial. La novedad de los años noventa no fue inventar sociedades artificiales sino construir un dispositivo computacional capaz de hacerlas crecer en silicio.<br><br>Tres tesis articuladas: <strong>(i)</strong> la arqueología prehistórica está estructuralmente en condiciones de aportar al campo de la simulación social generativa, pero permanece marginal en sus revisiones sistemáticas; <strong>(ii)</strong> las redes de circulación lítica del Cono Sur prehispánico —94 sitios, 22 fuentes, 741 muestras de la BD_Consolidada— constituyen un caso paradigmático para hacer <em>pattern-oriented modeling</em> con datos arqueológicos como criterio de validación; <strong>(iii)</strong> las tres tendencias que la literatura reciente identifica como frontera del campo —validación rigurosa, <em>building blocks</em> reutilizables, integración con IA— coinciden con compromisos metodológicos que la arqueología computacional desde el sur global puede asumir productivamente.<br><br><em>Las sociedades artificiales no son un futuro a imaginar. Son un pasado a recordar con dispositivos formales.</em>"

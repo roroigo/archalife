@@ -2058,7 +2058,14 @@ function closePanel() {
 function setNodeHash(id) {
   const target = id ? '#' + id : window.location.pathname + window.location.search;
   if (window.location.hash !== (id ? '#' + id : '')) {
-    history.replaceState(null, '', target);
+    // pushState al abrir un nodo · crea entrada en el historial, así atrás
+    //   del navegador cierra el panel en lugar de salir del sitio.
+    // replaceState al cerrar · evita acumular entradas vacías superfluas.
+    if (id) {
+      history.pushState(null, '', target);
+    } else {
+      history.replaceState(null, '', target);
+    }
   }
 }
 function syncPanelFromHash() {
@@ -2407,10 +2414,31 @@ function renderEntry(n) {
   const rels = relationsFor(n.id);
   const view = document.getElementById('view-entry');
   const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
-  const arxivId = `archalife.${padId(n.id)}.${(n.id.length * 7 + 23).toString().padStart(3,'0')}`;
+  // arxivId · si el nodo lo tiene declarado en data.json, lo usamos tal cual.
+  // Si no, lo generamos a partir del id como fallback.
+  const arxivId = n.arxivId || `archalife.${padId(n.id)}.${(n.id.length * 7 + 23).toString().padStart(3,'0')}`;
 
-  // a couple of optional title-italic helpers
-  const titleHTML = (n.label || '').replace(/(\(\d{4}\))/, '<em>$1</em>');
+  // a couple of optional title-italic helpers · si el nodo trae un title
+  // largo aparte, lo usamos como título del cuaderno; si no, fallback al label.
+  const titleHTML = ((n.title || n.label) || '').replace(/(\(\d{4}\))/, '<em>$1</em>');
+  const subtitleHTML = n.subtitle || ((n.body || '').split('.').slice(0,1).join('.') + '.');
+  // autores y afiliaciones · vienen del JSON si están declarados.
+  // Fallback al equipo por defecto del laboratorio.
+  const authorsArr = n.authors || [
+    { name: 'R. Mansilla-Sepúlveda', sup: 'a,1' },
+    { name: 'J. F. Blanco', sup: 'b' },
+    { name: 'M. Ovalle', sup: 'a' }
+  ];
+  const affiliationsArr = n.affiliations || [
+    { sup: 'a', text: 'laboratorio archalife · cohorte 0 · santiago / temuco' },
+    { sup: 'b', text: 'colaborador externo · arqueología computacional' }
+  ];
+  const authorsHTML = authorsArr.map((a, i) =>
+    `${a.name}${a.sup ? `<span class="sup">${a.sup}</span>` : ''}` + (i < authorsArr.length - 1 ? ',&nbsp;&nbsp;' : '')
+  ).join('');
+  const affiliationsHTML = affiliationsArr.map(a =>
+    `<div class="paper-affil"><span class="sup">${a.sup}</span>${a.text}</div>`
+  ).join('');
 
   // bullet content varies a bit by node so it doesn't feel boilerplate
   const isManifesto = n.id === 'manifiesto';
@@ -2430,14 +2458,9 @@ function renderEntry(n) {
 
         <div class="paper-title-block">
           <h1 class="paper-title">${titleHTML}</h1>
-          <div class="paper-subtitle">${(n.body || '').split('.').slice(0,1).join('.')}.</div>
-          <div class="paper-authors">
-            R. Mansilla-Sepúlveda<span class="sup">a,1</span>,&nbsp;&nbsp;
-            J. F. Blanco<span class="sup">b</span>,&nbsp;&nbsp;
-            M. Ovalle<span class="sup">a</span>
-          </div>
-          <div class="paper-affil"><span class="sup">a</span>laboratorio archalife · cohorte 0 · santiago / temuco</div>
-          <div class="paper-affil"><span class="sup">b</span>colaborador externo · arqueología computacional</div>
+          <div class="paper-subtitle">${subtitleHTML}</div>
+          <div class="paper-authors">${authorsHTML}</div>
+          ${affiliationsHTML}
           <div class="paper-date">borrador · ${today}</div>
         </div>
 
@@ -2469,15 +2492,27 @@ function renderEntry(n) {
           <p>Esta entrada, identificada internamente como <span class="m">η</span><span class="m" style="font-size:0.78em;vertical-align:sub">${padId(n.id)}</span>, ocupa una posición específica en la red del cuaderno: grado <span class="m">k=${n.degree}</span>, tipo <em>${n.type}</em>, estado de cultivo <em>${stateLabel || 'no declarado'}</em>. Su importancia local se expresa con claridad cuando se la mira como nodo del grafo bipartito sitio—fuente que estructura el corpus arqueológico de <em>BD_Consolidada</em>.<span class="fn-mark">2</span></p>
 
           ${isManifesto ? `
-          <h2><span class="num">2.</span>El gesto generativo, en una línea</h2>
-          <p>Schelling (1971) demostró con un tablero de damas que micro-preferencias mínimas producen segregación masiva. El argumento no es que los agentes sean racistas: es que la topología del vecindario no es neutra. Cuarenta años más tarde, el mismo movimiento —de la microespecificación a la emergencia— atraviesa la ciencia social computacional, la vida artificial, y la neurociencia teórica del <em>Free Energy Principle</em>.</p>
+          <h2><span class="num">2.</span>La contradicción productiva</h2>
+          <p>Cuando Joshua Epstein y Robert Axtell publicaron <em>Growing Artificial Societies</em> (1996), introdujeron una expresión que, leída literalmente, contiene una contradicción productiva. <em>Sociedad artificial</em> convoca al imaginario de las simulaciones digitales, los agentes computacionales, la vida sintética. Pero <em>artificial</em>, del latín <em>ars</em> y <em>facere</em>, designa lo hecho por arte, lo construido a mano. En sentido estricto, toda sociedad humana ha sido siempre artificial. Las redes de intercambio que documentamos en el registro material del Cono Sur prehispánico son sociedades artificiales en el mismo sentido riguroso en que lo son las simulaciones de NetLogo: sistemas de coordinación masiva sostenidos por reglas locales que cada participante conocía y ejecutaba, sin un diseñador central que los hubiera planificado.</p>
 
           <div class="latex-quote">
             «If you didn't grow it, you didn't explain it.»
-            <span class="attr">— Epstein, <em>Generative Social Science</em>, 2006, p. 50.</span>
+            <span class="attr">— Epstein, <em>Generative Social Science</em>, 2006.</span>
           </div>
 
-          <p>Nuestro programa hereda ese eslogan y lo coloca al servicio de un dominio raramente ABM-izado: la prehistoria sudamericana. La hipótesis fuerte es que las redes de circulación lítica, las prácticas funerarias y la formación de aldeas son procesos cuya morfología no se entiende sin <em>cultivar</em> hipótesis, una a una, hasta encontrar las microreglas mínimas que reproducen el registro.</p>
+          <p>La novedad técnica de los años noventa, por tanto, no fue <em>inventar</em> sociedades artificiales. Fue construir un dispositivo computacional capaz de hacerlas crecer paso a paso, en condiciones controladas, para inspeccionar cómo emergen las regularidades macroscópicas a partir de microespecificaciones. Lo que el ABM modela —emergencia, no-linealidad, autoorganización— es lo que la arqueología lleva un siglo estudiando bajo otros nombres: redes de intercambio, sistemas de parentesco, organizaciones segmentarias, economías recíprocas <span class="paper-cite">[5]</span>.</p>
+
+          <h2><span class="num">3.</span>Tres tesis articuladas</h2>
+
+          <p><strong>(i) La ausencia visible.</strong> La revisión PRISMA 2020 de Hernández Betancur y González Parias (2026) sobre 150 documentos en Scopus revela que el 79.2% de la producción ABM modela sistemas sociales contemporáneos. La arqueología prehistórica está estructuralmente fuera del campo: ninguno de esos 150 trabajos aborda redes de intercambio prehistóricas, dinámicas de procura lítica o formación de aldeas tempranas. Existe una brecha de visibilidad recíproca entre comunidades que comparten método.</p>
+
+          <p><strong>(ii) El caso paradigmático.</strong> Las redes de circulación de obsidiana del Cono Sur prehispánico —trabajadas con la base <em>BD_Consolidada</em>: 94 sitios, 22 fuentes, 741 muestras analizadas por XRF e ICP-MS en la Norpatagonia chileno-argentina— constituyen un caso paradigmático para hacer ABM riguroso. El análisis de redes bipartito sitio—fuente revela cuatro comunidades de baja permeabilidad y un nodo (Chan Chan 18) con <span class="m">BC = 0.2274</span>, ~3.7× sobre la mediana del corpus.</p>
+
+          <p>La pregunta sustantiva no es si Chan Chan 18 es un hub. Eso lo dice la red. La pregunta sustantiva es qué proceso generativo produjo ese hub. Una caminata aleatoria con preferencia proporcional al grado <span class="paper-cite">[6]</span>, sin ninguna estructura social sobreimpuesta, ¿produciría distribuciones empíricamente indistinguibles? La diferencia metodológica es decisiva: descartar la hipótesis nula antes de invocar mecanismos sociales más complejos.</p>
+
+          <p><strong>(iii) La frontera del campo.</strong> Las tres tendencias identificadas como frontera —validación rigurosa, <em>building blocks</em> reutilizables <span class="paper-cite">[7]</span>, integración con IA vía herramientas como NetLogo Chat <span class="paper-cite">[8]</span>— coinciden con compromisos metodológicos que la arqueología computacional desde el sur global puede asumir productivamente. La validación es el terreno donde la arqueología tiene contribución propia: el registro material como criterio independiente. Los <em>building blocks</em> coinciden con la lógica modular del proyecto. La integración con IA democratiza el método: incorpora a comunidades académicas hasta ahora excluidas por barreras técnicas.</p>
+
+          <p>Las sociedades artificiales no son un futuro a imaginar. Son un pasado a recordar con dispositivos formales. Recordar formalmente es, en este momento histórico, una operación política antes que técnica.</p>
           ` : ''}
 
           ${isFEP ? `
@@ -2529,11 +2564,11 @@ print(f'primary hub: {hub} · BC={bc[hub]:.4f}')
           <p>El estado actual de la parcela es <em>${stateLabel || 'no declarado'}</em>. La cohorte 0 del proyecto se mantiene pre-pública: el material aquí presentado debe leerse como cuaderno abierto, con los riesgos epistémicos y de obsolescencia que ello implica.</p>
           ` : ''}
 
-          <h2><span class="num">${isObsi ? 4 : (isFEP || isPref || isManifesto ? 3 : 4)}.</span>Próximos cultivos</h2>
+          <h2><span class="num">${isObsi || isManifesto ? 4 : (isFEP || isPref ? 3 : 4)}.</span>Próximos cultivos</h2>
           <p>Tres direcciones abiertas se mantienen como <em>semilla</em> en este nodo: (a) refinar la crítica metodológica frente al riesgo de tautología; (b) integrar la entrada con sus ${rels.length} vecinas mediante relaciones tipadas más densas; (c) publicar el protocolo ODD completo del modelo correspondiente. Las contribuciones se canalizan vía <span class="paper-ref">foro.archalife-project.org/${n.id}</span>.</p>
 
           ${rels.length ? `
-          <h2><span class="num">${isObsi ? 5 : (isFEP || isPref || isManifesto ? 4 : 5)}.</span>Relaciones (extracto)</h2>
+          <h2><span class="num">${isObsi || isManifesto ? 5 : (isFEP || isPref ? 4 : 5)}.</span>Relaciones (extracto)</h2>
           <p>Las primeras ${Math.min(rels.length, 5)} relaciones tipadas que parten de este nodo son: ${rels.slice(0, 5).map(r => `<em>${r.kind}</em> ${r.target.label}`).join('; ')}.</p>
           ` : ''}
 
