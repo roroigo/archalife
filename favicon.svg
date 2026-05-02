@@ -3,31 +3,118 @@
   <rect width="32" height="32" rx="6" fill="#07090d"/>
 
   <!--
-    Glider de Conway · 5 células que vuelan en diagonal NW→SE.
-    Patrón canónico (3x3 grid):
-        . X .
-        . . X
-        X X X
+    ⌖ Glider de Conway · ejecutando las reglas reales del Game of Life
 
-    Las cinco celdas viajan dentro del grupo, y el grupo se traslada
-    en pasos discretos para imitar el avance generacional del Conway:
-    cada 4 generaciones, el glider se ha desplazado 1 celda diagonal.
-    Aquí simplificamos a un translate cíclico que cruza el icono
-    cada ~4 segundos. Los navegadores que no soportan SMIL muestran
-    el primer fotograma estático, que ya es un glider reconocible.
+    Lo que se ve aquí no es un sprite que se desplaza: son 14 células
+    que nacen y mueren generación a generación según B3/S23. El glider
+    es el patrón de período 4 más simple que se traslada (1 celda en
+    diagonal cada 4 gens). Aquí se muestran 8 generaciones, así que
+    el glider hace dos ciclos completos: Gen 0..3 en su posición
+    inicial, y Gen 4..7 una celda al sureste — luego reset.
+
+    Cada generación dura 750 ms. Total del ciclo: 6 s.
+    Cada <rect> es una celda de la grid 5x5 con su propia animación
+    de opacity siguiendo el patrón de actividad real de esa coordenada.
   -->
   <g fill="#e09558">
-    <rect x="8"  y="0"  width="7" height="7" rx="1"/>
-    <rect x="16" y="8"  width="7" height="7" rx="1"/>
-    <rect x="0"  y="16" width="7" height="7" rx="1"/>
-    <rect x="8"  y="16" width="7" height="7" rx="1"/>
-    <rect x="16" y="16" width="7" height="7" rx="1"/>
-    <animateTransform
-      attributeName="transform"
-      type="translate"
-      values="-25 -25; -19 -19; -13 -13; -7 -7; -1 -1; 5 5; 11 11; 17 17; 23 23; 29 29; 35 35"
-      dur="4s"
-      calcMode="discrete"
-      repeatCount="indefinite"/>
+
+    <!-- (col 1, row 0) · viva solo en G0 -->
+    <rect x="7" y="1" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="1;0;0;0;0;0;0;0"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 0, row 1) · viva solo en G1 -->
+    <rect x="1" y="7" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="0;1;0;0;0;0;0;0"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 1, row 1) · viva solo en G3 -->
+    <rect x="7" y="7" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="0;0;0;1;0;0;0;0"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 2, row 1) · viva en G0,G1,G2,G4 -->
+    <rect x="13" y="7" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="1;1;1;0;1;0;0;0"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 0, row 2) · viva en G0, G2 -->
+    <rect x="1" y="13" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="1;0;1;0;0;0;0;0"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 1, row 2) · viva en G0, G1, G5 -->
+    <rect x="7" y="13" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="1;1;0;0;0;1;0;0"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 2, row 2) · viva en G0, G1, G2, G3, G7 -->
+    <rect x="13" y="13" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="1;1;1;1;0;0;0;1"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 3, row 2) · viva en G3, G4, G5, G6 -->
+    <rect x="19" y="13" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="0;0;0;1;1;1;1;0"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 1, row 3) · viva en G1, G2, G3, G4, G6 -->
+    <rect x="7" y="19" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="0;1;1;1;1;0;1;0"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 2, row 3) · viva en G2, G3, G4, G5 -->
+    <rect x="13" y="19" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="0;0;1;1;1;1;0;0"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 3, row 3) · viva en G4, G5, G6, G7 -->
+    <rect x="19" y="19" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="0;0;0;0;1;1;1;1"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 4, row 3) · viva solo en G7 -->
+    <rect x="25" y="19" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="0;0;0;0;0;0;0;1"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 2, row 4) · viva en G5, G6, G7 -->
+    <rect x="13" y="25" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="0;0;0;0;0;1;1;1"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- (col 3, row 4) · viva en G6, G7 -->
+    <rect x="19" y="25" width="5" height="5" rx="0.5">
+      <animate attributeName="opacity" values="0;0;0;0;0;0;1;1"
+        keyTimes="0;0.125;0.25;0.375;0.5;0.625;0.75;0.875"
+        calcMode="discrete" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
   </g>
 </svg>
