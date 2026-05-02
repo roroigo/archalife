@@ -2250,7 +2250,9 @@ function closePanel() {
   panel.classList.remove('open');
   panel.setAttribute('aria-hidden', 'true');
   clearSelection();
-  setNodeHash(null);
+  // Solo limpiar el hash si estamos en sky · si estamos en cuaderno
+  // (entry o transition), tocar la URL pisaría el state del cuaderno.
+  if (viewMode === 'sky') setNodeHash(null);
 }
 
 /* ━━━━━━━━━━━━ DEEP LINKS · #node-id en la URL ━━━━━━━━━━━━ */
@@ -2516,6 +2518,12 @@ function fadeViajeCanvas(targetAlpha, durationMs) {
 async function goToEntry(n) {
   if (viewMode !== 'sky') return;
   viewMode = 'transition';
+  // Marcar el historial: empuja una entrada NUEVA con state que dice
+  // "estamos en cuaderno con tal nodo". Mantiene la URL #node-id que
+  // ya estaba, pero ahora atrás del navegador puede distinguir entre
+  // "panel abierto en sky" y "cuaderno". Si el usuario pulsa back,
+  // el listener de popstate llamará a backToSky.
+  history.pushState({ archalife: 'entry', nodeId: n.id }, '', '#' + n.id);
   closePanel();
 
   // 1. zoom into clicked node
@@ -2598,8 +2606,41 @@ async function backToSky() {
   viajeOverlay.style.transition = '';
   viewMode = 'sky';
 }
-document.getElementById('back-to-sky').addEventListener('click', backToSky);
-document.getElementById('brand-link').addEventListener('click', () => { if (viewMode==='entry') backToSky(); });
+// Los botones del UI que vuelven al jardín disparan history.back()
+// en lugar de llamar a backToSky directamente. Eso hace que el
+// historial del navegador se mantenga sincronizado: atrás del UI y
+// atrás del navegador disparan la misma transición vía popstate.
+document.getElementById('back-to-sky').addEventListener('click', () => {
+  if (viewMode === 'entry') history.back();
+});
+document.getElementById('brand-link').addEventListener('click', () => {
+  if (viewMode === 'entry') history.back();
+});
+
+// Listener de popstate · maneja atrás/adelante del navegador
+// para ir entre sky (jardín) y entry (cuaderno) sin estados rotos.
+window.addEventListener('popstate', async (e) => {
+  const incoming = e.state;
+  const wantsEntry = incoming && incoming.archalife === 'entry';
+  if (viewMode === 'entry' && !wantsEntry) {
+    // Atrás desde cuaderno · cerrar y volver al jardín
+    await backToSky();
+    // Si la URL aún tiene #node-id, re-abrir el panel de ese nodo
+    // (continuidad UX: el visitante vuelve al estado donde estaba antes
+    // de pulsar "leer completo").
+    const targetId = location.hash.slice(1);
+    if (targetId && nodeIdx[targetId] !== undefined && viewMode === 'sky') {
+      selectNode(nodeIdx[targetId]);
+      openPanel(NODES[nodeIdx[targetId]]);
+    }
+  } else if (viewMode === 'sky' && wantsEntry) {
+    // Adelante desde sky · re-entrar al cuaderno
+    const node = NODES.find(nn => nn.id === incoming.nodeId);
+    if (node) goToEntry(node);
+  }
+  // En cualquier otro caso, syncPanelFromHash (escucha hashchange)
+  // se ocupa de abrir/cerrar el panel según corresponda.
+});
 
 function renderEntry(n) {
   const stateLabel = n.state ? n.state.replace('seedling','semilla').replace('budding','en cultivo').replace('evergreen','estable') : '';
