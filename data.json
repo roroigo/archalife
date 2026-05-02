@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    {
+      "id": "manifiesto",
+      "type": "entry",
+      "label": "Manifiesto",
+      "state": "evergreen",
+      "featured": true,
+      "body": "La raíz. El gesto fundacional del proyecto: cultivar pasados posibles. De aquí crecerán todas las ramas — autores, obras, conceptos, casos — a medida que el jardín madure."
+    }
+  ],
+  "edges": []
+}

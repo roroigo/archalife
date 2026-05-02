@@ -1384,12 +1384,16 @@ body.in-entry { background: var(--paper-bg); }
   <div id="viaje-label">⌖ cultivando<span class="sub">manifiesto</span></div>
 </div>
 
-<script>
+<script type="module">
 /* ━━━━━━━━━━━━ DATA ━━━━━━━━━━━━ */
-const NODES = [
-  { id: 'manifiesto', type: 'entry', label: 'Manifiesto', state: 'evergreen', featured: true, body: 'La raíz. El gesto fundacional del proyecto: cultivar pasados posibles. De aquí crecerán todas las ramas — autores, obras, conceptos, casos — a medida que el jardín madure.' },
-];
-const EDGES = [];
+/* El contenido del jardín vive en data.json. Para añadir o editar entradas,
+   autores u obras, edita ese archivo — no toques este HTML. */
+const __archalifeData = await fetch('./data.json').then(r => {
+  if (!r.ok) throw new Error(`No se pudo cargar data.json (${r.status})`);
+  return r.json();
+});
+const NODES = __archalifeData.nodes;
+const EDGES = __archalifeData.edges;
 
 const WOLFRAM_RULES = [
   { rule: 110, name: 'rule 110', tag: 'class iv · turing-complete', seed: 'edge' },
