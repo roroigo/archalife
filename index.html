@@ -1333,8 +1333,17 @@ body.in-entry .song-egg { display: block; }
 }
 .song-egg__title .glyph { color: var(--ochre); margin-right: 4px; font-style: normal; }
 .song-egg__explain {
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   color: var(--paper-mute);
+}
+.song-egg__viz {
+  display: block;
+  width: 100%;
+  height: 80px;
+  margin-bottom: 12px;
+  background: rgba(7, 9, 13, 0.5);
+  border: 1px solid var(--paper-ghost);
+  image-rendering: pixelated;
 }
 .song-egg__controls {
   display: flex;
@@ -2966,10 +2975,15 @@ function songColToNote(col) {
    Una fila de células (toroidal) que se actualiza generación a
    generación según una regla 0-255. Las "newborn" son las celdas
    que estaban muertas y nacen este tick — eso es lo que toca. */
+// Historial Wolfram para visualización tipo cascada (últimas N filas)
+const WOLF_HISTORY_MAX = 10;
+let wolfHistory = [];
+
 function wolfSeed() {
   wolfRow = new Uint8Array(SONG_W_COLS);
   wolfRow[Math.floor(SONG_W_COLS / 2)] = 1; // semilla central clásica
   wolfRule = WOLF_RULES_MUSIC[Math.floor(Math.random() * WOLF_RULES_MUSIC.length)];
+  wolfHistory = [new Uint8Array(wolfRow)];
 }
 function wolfStep() {
   const next = new Uint8Array(SONG_W_COLS);
@@ -2983,6 +2997,8 @@ function wolfStep() {
     if (next[i] && !wolfRow[i]) newborn.push({ x: i, y: i % SONG_ROWS });
   }
   wolfRow = next;
+  wolfHistory.push(new Uint8Array(wolfRow));
+  if (wolfHistory.length > WOLF_HISTORY_MAX) wolfHistory.shift();
   return newborn;
 }
 
@@ -3053,6 +3069,114 @@ function songPlayNote(note, dur, velocity = 0.5) {
   });
 }
 
+/* ─── Visualización · canvas mini-grid dentro del panel ──────────
+   Se dibuja en cada frame mientras songRunning. Las células vivas
+   son rectángulos ocre tenue; las que NACEN este tick (las que
+   disparan nota) parpadean brillantes y se atenúan en 600 ms.
+   Conway: grid 2D estática. Wolfram: cascada de las últimas filas. */
+const SONG_FLASH_DUR = 600;
+const songFlashCells = []; // { x, y, t }
+let songVizCanvas = null;
+let songVizCtx = null;
+let songVizDPR = 1;
+let songVizFrame = null;
+
+function setupSongViz() {
+  songVizCanvas = songEgg && songEgg.querySelector('.song-egg__viz');
+  if (!songVizCanvas) return;
+  songVizCtx = songVizCanvas.getContext('2d');
+  songVizDPR = window.devicePixelRatio || 1;
+  const w = songVizCanvas.clientWidth;
+  const h = songVizCanvas.clientHeight;
+  if (w === 0 || h === 0) return;
+  songVizCanvas.width = w * songVizDPR;
+  songVizCanvas.height = h * songVizDPR;
+  songVizCtx.setTransform(songVizDPR, 0, 0, songVizDPR, 0, 0);
+}
+
+function pushSongFlash(x, y) {
+  songFlashCells.push({ x, y, t: performance.now() });
+}
+
+function drawConwayViz(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  const cw = w / SONG_COLS;
+  const ch = h / SONG_ROWS;
+  // células vivas · ocre tenue
+  ctx.fillStyle = 'rgba(224, 149, 88, 0.32)';
+  for (let y = 0; y < SONG_ROWS; y++) {
+    for (let x = 0; x < SONG_COLS; x++) {
+      if (songGet(x, y)) {
+        ctx.fillRect(x * cw + 0.5, y * ch + 0.5, Math.max(1, cw - 1), Math.max(1, ch - 1));
+      }
+    }
+  }
+  // flash · células recién nacidas (que dispararon nota)
+  const now = performance.now();
+  for (let i = songFlashCells.length - 1; i >= 0; i--) {
+    const f = songFlashCells[i];
+    const age = now - f.t;
+    if (age >= SONG_FLASH_DUR) { songFlashCells.splice(i, 1); continue; }
+    const alpha = 1 - (age / SONG_FLASH_DUR);
+    // halo
+    ctx.fillStyle = `rgba(240, 168, 104, ${alpha * 0.25})`;
+    ctx.fillRect(f.x * cw - 1, f.y * ch - 1, cw + 2, ch + 2);
+    // núcleo brillante
+    ctx.fillStyle = `rgba(240, 168, 104, ${alpha})`;
+    ctx.fillRect(f.x * cw + 0.5, f.y * ch + 0.5, Math.max(1, cw - 1), Math.max(1, ch - 1));
+  }
+}
+
+function drawWolfViz(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (wolfHistory.length === 0) return;
+  const cw = w / SONG_W_COLS;
+  const rows = Math.min(WOLF_HISTORY_MAX, wolfHistory.length);
+  const ch = h / WOLF_HISTORY_MAX;
+  // dibujar de abajo (más reciente) hacia arriba (más vieja)
+  for (let r = 0; r < rows; r++) {
+    const ageRatio = r / rows; // 0 = más vieja, 1 = más nueva
+    const alpha = 0.12 + ageRatio * 0.30;
+    ctx.fillStyle = `rgba(224, 149, 88, ${alpha})`;
+    const histIdx = wolfHistory.length - 1 - (rows - 1 - r); // mapeo de índice
+    const yPos = (WOLF_HISTORY_MAX - rows + r) * ch;
+    const row = wolfHistory[histIdx];
+    if (!row) continue;
+    for (let x = 0; x < SONG_W_COLS; x++) {
+      if (row[x]) {
+        ctx.fillRect(x * cw + 0.5, yPos + 0.5, Math.max(1, cw - 1), Math.max(1, ch - 1));
+      }
+    }
+  }
+  // flash · solo afectan a la fila más reciente (la última)
+  const now = performance.now();
+  const lastY = (WOLF_HISTORY_MAX - 1) * ch;
+  for (let i = songFlashCells.length - 1; i >= 0; i--) {
+    const f = songFlashCells[i];
+    const age = now - f.t;
+    if (age >= SONG_FLASH_DUR) { songFlashCells.splice(i, 1); continue; }
+    const alpha = 1 - (age / SONG_FLASH_DUR);
+    ctx.fillStyle = `rgba(240, 168, 104, ${alpha * 0.25})`;
+    ctx.fillRect(f.x * cw - 1, lastY - 1, cw + 2, ch + 2);
+    ctx.fillStyle = `rgba(240, 168, 104, ${alpha})`;
+    ctx.fillRect(f.x * cw + 0.5, lastY + 0.5, Math.max(1, cw - 1), Math.max(1, ch - 1));
+  }
+}
+
+function songVizLoop() {
+  if (!songVizCtx) { songVizFrame = null; return; }
+  const w = songVizCanvas.width / songVizDPR;
+  const h = songVizCanvas.height / songVizDPR;
+  if (songEngine === 'conway') drawConwayViz(songVizCtx, w, h);
+  else drawWolfViz(songVizCtx, w, h);
+  // mientras haya actividad (running o flashes pendientes) seguir dibujando
+  if (songRunning || songFlashCells.length > 0) {
+    songVizFrame = requestAnimationFrame(songVizLoop);
+  } else {
+    songVizFrame = null;
+  }
+}
+
 function songTick() {
   const newborn = songEngine === 'conway' ? songStep() : wolfStep();
   if (newborn.length === 0) songStableCount++;
@@ -3070,6 +3194,7 @@ function songTick() {
   const toPlay = newborn.slice(0, 4);
   toPlay.forEach(({ x, y }) => {
     songPlayNote(songColToNote(x), songRowToDuration(y), 0.35 + Math.random() * 0.25);
+    pushSongFlash(x, y);
   });
   updateSongMeter();
 }
@@ -3108,6 +3233,7 @@ async function startSong() {
           for (let x = 0; x < SONG_COLS; x++) {
             if (songGet(x, y)) {
               songPlayNote(songColToNote(x), songRowToDuration(y), 0.3);
+              pushSongFlash(x, y);
             }
           }
         }
@@ -3118,6 +3244,7 @@ async function startSong() {
         for (let i = 0; i < SONG_W_COLS; i++) {
           if (wolfRow[i]) {
             songPlayNote(songColToNote(i), songRowToDuration(i % SONG_ROWS), 0.3);
+            pushSongFlash(i, 0);
           }
         }
       }
@@ -3126,6 +3253,9 @@ async function startSong() {
     stack.drone.triggerAttack('E1');
     songTickHandle = setInterval(songTick, 750);
     songNodeId = window.location.hash.slice(1) || 'manifiesto';
+    // arrancar el loop de visualización
+    setupSongViz();
+    if (!songVizFrame) songVizFrame = requestAnimationFrame(songVizLoop);
   }
   refreshSongUI();
 }
@@ -3139,6 +3269,7 @@ function stopSong() {
     songStack.pad.releaseAll();
   }
   songRunning = false;
+  // el loop de viz se detiene solo cuando se vacían los flashes pendientes
   refreshSongUI();
 }
 
@@ -3192,6 +3323,18 @@ if (songEgg) {
   teaser.addEventListener('click', () => {
     songEgg.classList.add('expanded');
     refreshSongUI();
+    // configurar canvas ahora que el panel ya tiene dimensiones reales
+    setupSongViz();
+    // si hay sesión en curso, redibujar el último frame para mostrar el estado
+    if (songVizCtx && (songRunning || songFlashCells.length > 0)) {
+      if (!songVizFrame) songVizFrame = requestAnimationFrame(songVizLoop);
+    } else if (songVizCtx) {
+      // dibujar el estado actual aunque no haya animación (estado pausado)
+      const w = songVizCanvas.width / songVizDPR;
+      const h = songVizCanvas.height / songVizDPR;
+      if (songEngine === 'conway') drawConwayViz(songVizCtx, w, h);
+      else drawWolfViz(songVizCtx, w, h);
+    }
   });
   closeBtn.addEventListener('click', () => {
     songEgg.classList.remove('expanded');
@@ -3226,6 +3369,7 @@ if (songEgg) {
     <button class="song-egg__close" aria-label="cerrar">×</button>
     <div class="song-egg__title"><span class="glyph">⌖</span>partitura emergente</div>
     <p class="song-egg__explain">Cuando pulses <em>play</em>, esta página generará una canción solo para ti — siguiendo el <em>Game of Life</em> de Conway o las reglas de Wolfram, sorteado al azar. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.</p>
+    <canvas class="song-egg__viz" aria-hidden="true"></canvas>
     <div class="song-egg__controls">
       <button class="song-egg__btn song-egg__play">⏵ play</button>
       <span class="song-egg__meter">00:00 · 0 notas</span>
