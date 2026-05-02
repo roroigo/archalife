@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="bg-vignette" cx="50%" cy="55%" r="70%">
+      <stop offset="0%" stop-color="#0f141c"/>
+      <stop offset="100%" stop-color="#04060a"/>
+    </radialGradient>
+    <linearGradient id="rule110" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e09558" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#e09558" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg-vignette)"/>
+
+  <!-- decorative wolfram-like cell pattern, hand-placed -->
+  <g fill="url(#rule110)">
+    <rect x="40" y="40" width="6" height="6"/>
+    <rect x="80" y="60" width="6" height="6"/>
+    <rect x="120" y="80" width="6" height="6"/>
+    <rect x="160" y="100" width="6" height="6"/>
+    <rect x="180" y="100" width="6" height="6"/>
+    <rect x="200" y="120" width="6" height="6"/>
+    <rect x="220" y="140" width="6" height="6"/>
+    <rect x="240" y="140" width="6" height="6"/>
+    <rect x="260" y="160" width="6" height="6"/>
+    <rect x="60" y="180" width="6" height="6"/>
+    <rect x="100" y="200" width="6" height="6"/>
+    <rect x="140" y="220" width="6" height="6"/>
+    <rect x="160" y="220" width="6" height="6"/>
+    <rect x="180" y="240" width="6" height="6"/>
+    <rect x="200" y="260" width="6" height="6"/>
+    <rect x="220" y="280" width="6" height="6"/>
+    <rect x="240" y="300" width="6" height="6"/>
+    <rect x="260" y="300" width="6" height="6"/>
+    <rect x="280" y="320" width="6" height="6"/>
+
+    <rect x="940" y="380" width="6" height="6"/>
+    <rect x="960" y="400" width="6" height="6"/>
+    <rect x="980" y="400" width="6" height="6"/>
+    <rect x="1000" y="420" width="6" height="6"/>
+    <rect x="1020" y="440" width="6" height="6"/>
+    <rect x="1040" y="440" width="6" height="6"/>
+    <rect x="1060" y="460" width="6" height="6"/>
+    <rect x="1080" y="480" width="6" height="6"/>
+    <rect x="900" y="500" width="6" height="6"/>
+    <rect x="940" y="520" width="6" height="6"/>
+    <rect x="980" y="540" width="6" height="6"/>
+    <rect x="1020" y="540" width="6" height="6"/>
+    <rect x="1060" y="560" width="6" height="6"/>
+    <rect x="1100" y="580" width="6" height="6"/>
+  </g>
+
+  <!-- ⌖ glyph, large, centered-left -->
+  <g transform="translate(140, 250)" stroke="#e09558" fill="none" stroke-linecap="round">
+    <circle cx="65" cy="65" r="55" stroke-width="3"/>
+    <line x1="65" y1="0" x2="65" y2="130" stroke-width="3"/>
+    <line x1="0" y1="65" x2="130" y2="65" stroke-width="3"/>
+    <circle cx="65" cy="65" r="5" fill="#e09558" stroke="none"/>
+  </g>
+
+  <!-- pretitle -->
+  <text x="320" y="280" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-style="italic" fill="#efe7d4" fill-opacity="0.55" letter-spacing="3">prehistoric artificial life</text>
+
+  <!-- title -->
+  <text x="320" y="370" font-family="Georgia, 'Times New Roman', serif" font-size="120" font-weight="300" fill="#efe7d4" letter-spacing="-2">Arch<tspan fill="#e09558">A</tspan>Life</text>
+
+  <!-- tagline -->
+  <text x="320" y="430" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-style="italic" fill="#efe7d4" fill-opacity="0.7">growing societies, again</text>
+
+  <!-- footer marginalia -->
+  <text x="320" y="510" font-family="'Courier New', monospace" font-size="14" fill="#efe7d4" fill-opacity="0.4" letter-spacing="2">⌖ COHORTE 0 · PRE-PÚBLICA · V0.4.X-α</text>
+  <text x="320" y="535" font-family="'Courier New', monospace" font-size="13" fill="#efe7d4" fill-opacity="0.3" letter-spacing="2">"IF YOU DIDN'T GROW IT, YOU DIDN'T EXPLAIN IT" — EPSTEIN, 2006</text>
+</svg>
