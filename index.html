@@ -2026,6 +2026,63 @@ const dendritesG = document.getElementById('dendrites');
    que saldrían del viewport se descartan). */
 
 let dendriteTips = [];   // [{x, y, angle, sporeEl, generation}]
+
+/* Set de índices de nodos que el rizoma YA alcanzó.
+   El nodo 0 (manifiesto) es el origen del rizoma · siempre "alcanzado".
+   Cuando una punta del rizoma llega cerca de un nodo no alcanzado,
+   añadimos su índice al Set y dibujamos el ancla visual desde la
+   punta hasta el centro del nodo (la red queda visualmente
+   conectada). Esto hace que cada nodo nuevo sea EVENTUALMENTE
+   integrado en la red rizomática · sin necesidad de declarar edges. */
+const __rhizomeReached = new Set([0]);
+const RHIZOME_REACH_PX = 50; // distancia bajo la cual un nodo "se conecta"
+
+function nearestUnreachedNode(fromX, fromY) {
+  if (typeof nodes === 'undefined') return null;
+  let best = null, bestDist = Infinity;
+  nodes.forEach((n, i) => {
+    if (__rhizomeReached.has(i)) return;
+    const d = Math.hypot(n.x - fromX, n.y - fromY);
+    if (d < bestDist) { bestDist = d; best = n; }
+  });
+  return best;
+}
+
+function checkRhizomeReached(tip) {
+  if (typeof nodes === 'undefined') return;
+  nodes.forEach((n, i) => {
+    if (__rhizomeReached.has(i)) return;
+    if (Math.hypot(n.x - tip.x, n.y - tip.y) < RHIZOME_REACH_PX) {
+      __rhizomeReached.add(i);
+      drawRhizomeAnchor(tip, n);
+    }
+  });
+}
+
+/* Cuando una rama del rizoma llega "suficientemente cerca" de un nodo,
+   dibujamos un último brote curvo que ANCLA la punta al centro del
+   nodo · cierra el circuito visualmente · misma estética que el resto
+   de las dendritas (ocre, animación de stroke-dashoffset). */
+function drawRhizomeAnchor(tip, node) {
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  const dx = node.x - tip.x, dy = node.y - tip.y;
+  // punto de control curvado · perpendicular al vector tip→nodo
+  const ctrlX = (tip.x + node.x) / 2 + dy * 0.18;
+  const ctrlY = (tip.y + node.y) / 2 - dx * 0.18;
+  const d = `M ${tip.x} ${tip.y} Q ${ctrlX} ${ctrlY} ${node.x} ${node.y}`;
+  path.setAttribute('d', d);
+  path.setAttribute('class', 'dendrite tip');
+  dendritesG.appendChild(path);
+  const len = path.getTotalLength ? path.getTotalLength() : 100;
+  path.style.strokeDasharray = len;
+  path.style.strokeDashoffset = len;
+  path.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 1s ease';
+  path.style.opacity = '0';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    path.style.strokeDashoffset = '0';
+    path.style.opacity = '1';
+  }));
+}
 let dendriteGrowthTimer = null;
 const DENDRITE_GROW_INTERVAL = 5500; // ms entre brotes — ~11 brotes/min
 const DENDRITE_MAX_TIPS = 180;       // límite duro para no saturar el DOM
@@ -2108,9 +2165,22 @@ function spawnFromTip() {
   const youngBias = Math.pow(Math.random(), 1.6);
   const idx = Math.min(dendriteTips.length - 1, Math.floor(youngBias * dendriteTips.length));
   const tip = dendriteTips[dendriteTips.length - 1 - idx];
-  const branchCount = 1 + (Math.random() < 0.35 ? 1 : 0); // a veces 2 brotes desde una punta
+  // ¿hay nodos no alcanzados todavía? · si los hay, una fracción de los brotes
+  // se orienta hacia el más cercano · el resto sigue creciendo libre (lo que
+  // mantiene la sensación orgánica del rizoma sin perder propósito)
+  const target = nearestUnreachedNode(tip.x, tip.y);
+  const branchCount = 1 + (Math.random() < 0.35 ? 1 : 0);
   for (let b = 0; b < branchCount; b++) {
-    const newAngle = tip.angle + (Math.random() - 0.5) * 1.6 + (b * 0.7 - 0.35);
+    let newAngle;
+    const wantsTarget = target && Math.random() < 0.55;
+    if (wantsTarget) {
+      // ángulo dirigido al nodo objetivo + wobble orgánico
+      const targetAngle = Math.atan2(target.y - tip.y, target.x - tip.x);
+      newAngle = targetAngle + (Math.random() - 0.5) * 0.7;
+    } else {
+      // crecimiento libre · ángulo aleatorio amplio desde la punta
+      newAngle = tip.angle + (Math.random() - 0.5) * 1.6 + (b * 0.7 - 0.35);
+    }
     const len = Math.min(W, H) * (0.10 + Math.random() * 0.10);
     const segs = 4 + Math.floor(Math.random() * 3);
     // proyectar a ver si la nueva punta cabe; si no, ajustar ángulo
@@ -2121,9 +2191,11 @@ function spawnFromTip() {
       candidate = { x: tip.x + Math.cos(finalAngle) * len, y: tip.y + Math.sin(finalAngle) * len };
       tries++;
     }
-    if (tries >= 6) continue; // descartado: ya no cabe en ninguna dirección
+    if (tries >= 6) continue;
     const newTip = growBranchFrom(tip.x, tip.y, finalAngle, len, segs, tip.generation + 1);
     dendriteTips.push(newTip);
+    // ¿esta punta alcanzó algún nodo no alcanzado? · si sí, dibujar ancla
+    checkRhizomeReached(newTip);
   }
 }
 
@@ -2132,6 +2204,11 @@ function drawOrbits() {
   dendritesG.innerHTML = '';
   dendriteTips = [];
   if (dendriteGrowthTimer) { clearInterval(dendriteGrowthTimer); dendriteGrowthTimer = null; }
+  // resetear Set de nodos alcanzados · solo el manifiesto (índice 0) sigue
+  // siendo el origen del rizoma · el resto vuelve a "no alcanzado" para
+  // que las conexiones se dibujen otra vez al crecer
+  __rhizomeReached.clear();
+  __rhizomeReached.add(0);
 
   const cx = W/2, cy = ANCHOR_Y;
   // semillas iniciales · pocas raíces cortas radiales para empezar
