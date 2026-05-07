@@ -1099,6 +1099,26 @@ body.viaje-zoom #life-canvas {
 }
 .paper-body h3 .num { margin-right: 0.5em; font-style: normal; }
 
+/* Pull-quotes · blockquote estilizado como cita destacada */
+.paper-body blockquote {
+  margin: 1.4em 0;
+  padding: 0.6em 1.6em;
+  border-left: 3px solid var(--paper-rule);
+  font-style: italic;
+  color: var(--paper-ink);
+  background: rgba(0, 0, 0, 0.02);
+}
+.paper-body blockquote p { text-indent: 0; }
+
+/* Listas · viñetas y numeración con tipografía coherente del paper */
+.paper-body ul, .paper-body ol {
+  margin: 1em 0 1em 1.6em;
+  padding: 0;
+}
+.paper-body ul li, .paper-body ol li {
+  margin: 0.3em 0;
+}
+
 /* inline links — classic blue-grey citations */
 .paper-body a, .paper-cite, .paper-ref {
   color: var(--paper-link);
@@ -2908,7 +2928,7 @@ function renderEntry(n) {
 
         ${translationBanner}
 
-        <div class="paper-abstract">
+        ${hasCustomBody ? '' : `<div class="paper-abstract">
           <div class="head">${t('abstractHead')}</div>
           <div class="body">
             Este cuaderno documenta el estado actual de la entrada <em>${n.label}</em> dentro del jardín
@@ -2923,7 +2943,7 @@ function renderEntry(n) {
             <span class="lbl">${t('keywordsLabel')}</span>
             ${[n.type, ...(n.tags || []).slice(0,3), 'generative social science', 'cono sur'].filter(Boolean).map(t => t.toLowerCase()).join('; ')}.
           </div>
-        </div>
+        </div>`}
 
         <div class="paper-rule"></div>
 
@@ -3093,10 +3113,17 @@ async function loadAcademicLibs() {
     const autoMod = await import('https://esm.sh/katex@0.16.10/contrib/auto-render');
     window.__katex = katexMod.default || katexMod;
     window.__renderMath = autoMod.default || autoMod;
-    // Prism · core + python grammar
+    // Prism · core + grammars que usamos en los nodos
     const PrismMod = await import('https://esm.sh/prismjs@1.29.0');
     const Prism = PrismMod.default || PrismMod;
     await import('https://esm.sh/prismjs@1.29.0/components/prism-python');
+    // NetLogo · Prism no trae grammar nativa, usamos Lisp como fallback
+    // (visualmente similar · keywords, paréntesis, comments con `;`).
+    await import('https://esm.sh/prismjs@1.29.0/components/prism-lisp');
+    // alias · cualquier <code class="language-netlogo"> se trata como Lisp
+    if (Prism.languages && Prism.languages.lisp && !Prism.languages.netlogo) {
+      Prism.languages.netlogo = Prism.languages.lisp;
+    }
     window.__Prism = Prism;
     return { katex: window.__katex, renderMath: window.__renderMath, Prism };
   })();
