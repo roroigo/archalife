@@ -1066,6 +1066,12 @@ body.viaje-zoom #life-canvas {
   color: var(--paper-ink-soft);
   margin-bottom: 4px;
 }
+.paper-affil .sup {
+  font-size: 0.7em;
+  vertical-align: super;
+  margin-right: 3px;
+  font-style: normal;
+}
 .paper-date {
   font-family: 'Computer Modern Serif', 'Latin Modern Roman', Georgia, serif;
   font-size: 10pt;
@@ -2942,7 +2948,7 @@ function renderEntry(n) {
     `${a.name}${a.sup ? `<span class="sup">${a.sup}</span>` : ''}` + (i < authorsArr.length - 1 ? ',&nbsp;&nbsp;' : '')
   ).join('');
   const affiliationsHTML = affiliationsArr.map(a =>
-    `<div class="paper-affil"><span class="sup">${a.sup}</span>${a.text}</div>`
+    `<div class="paper-affil"><span class="sup">${a.sup}</span>${nodeFieldFromObj(a, 'text')}</div>`
   ).join('');
 
   // bullet content varies a bit by node so it doesn't feel boilerplate

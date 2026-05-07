@@ -8,11 +8,11 @@
       "subtitle": "Una posición desde la arqueología del Cono Sur",
       "arxivId": "archalife.SOCART.001",
       "authors": [
-        { "name": "R. Mendoza-Sánchez", "sup": "a,1" }
+        { "name": "R. Mendoza-Sánchez", "sup": "a,b" }
       ],
       "affiliations": [
-        { "sup": "a", "text": "departamento de ciencias sociales · universidad católica de temuco · concepción, chile" },
-        { "sup": "1", "text": "ARKdrone · ArkeoAI" }
+        { "sup": "a", "text_es": "profesor · universidad católica de temuco", "text_en": "professor · universidad católica de temuco" },
+        { "sup": "b", "text_es": "miembro · sociedad chilena de arqueología", "text_en": "member · chilean archaeological society" }
       ],
       "state": "budding",
       "featured": true,
@@ -29,11 +29,11 @@
       "subtitle_en": "A first encounter with optimal foraging theory and agent-based modeling",
       "arxivId": "archalife.HBE.001",
       "authors": [
-        { "name": "R. Mendoza-Sánchez", "sup": "a,1" }
+        { "name": "R. Mendoza-Sánchez", "sup": "a,b" }
       ],
       "affiliations": [
-        { "sup": "a", "text": "departamento de ciencias sociales · universidad católica de temuco · concepción, chile" },
-        { "sup": "1", "text": "ARKdrone · ArkeoAI" }
+        { "sup": "a", "text_es": "profesor · universidad católica de temuco", "text_en": "professor · universidad católica de temuco" },
+        { "sup": "b", "text_es": "miembro · sociedad chilena de arqueología", "text_en": "member · chilean archaeological society" }
       ],
       "state": "budding",
       "featured": false,
