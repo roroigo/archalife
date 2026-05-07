@@ -11,8 +11,8 @@
         { "name": "R. Mendoza-Sánchez", "sup": "a,b" }
       ],
       "affiliations": [
-        { "sup": "a", "text_es": "profesor · universidad católica de temuco", "text_en": "professor · universidad católica de temuco" },
-        { "sup": "b", "text_es": "miembro · sociedad chilena de arqueología", "text_en": "member · chilean archaeological society" }
+        { "sup": "a", "text_es": "Profesor · Universidad Católica de Temuco", "text_en": "Professor · Universidad Católica de Temuco" },
+        { "sup": "b", "text_es": "Miembro · Sociedad Chilena de Arqueología", "text_en": "Member · Chilean Archaeological Society" }
       ],
       "state": "budding",
       "featured": true,
@@ -32,8 +32,8 @@
         { "name": "R. Mendoza-Sánchez", "sup": "a,b" }
       ],
       "affiliations": [
-        { "sup": "a", "text_es": "profesor · universidad católica de temuco", "text_en": "professor · universidad católica de temuco" },
-        { "sup": "b", "text_es": "miembro · sociedad chilena de arqueología", "text_en": "member · chilean archaeological society" }
+        { "sup": "a", "text_es": "Profesor · Universidad Católica de Temuco", "text_en": "Professor · Universidad Católica de Temuco" },
+        { "sup": "b", "text_es": "Miembro · Sociedad Chilena de Arqueología", "text_en": "Member · Chilean Archaeological Society" }
       ],
       "state": "budding",
       "featured": false,

@@ -2966,11 +2966,11 @@ function renderEntry(n) {
 
   view.innerHTML = `
     <div class="paper-page">
-      <div class="paper-stamp">arXiv:${arxivId}v1 [cs.MA · soc-anth] · ${today}</div>
+      <div class="paper-stamp">${currentLang === 'en' ? 'ArchALife working paper' : 'ArchALife · documento de trabajo'} · ${arxivId}v1 · ${today}</div>
       <div class="paper-inner">
 
         <div class="paper-runhead">
-          <span><em>ArchALife</em> · ${t('runningHead')} · vol. 0, n.º ${padId(n.id)}</span>
+          <span><em>ArchALife</em> · ${t('runningHead')} · ${arxivId.split('.').slice(1).join('.')}</span>
           <span class="pgnum">1</span>
         </div>
 
