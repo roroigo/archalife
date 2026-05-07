@@ -47,7 +47,7 @@
           "title_en": "Interactive DBM model",
           "intro_es": "Forrajero único en un paisaje 2D con cinco tipos de presa (guanaco, huemul, vizcacha, coypu, lagartija). Ajusta las tasas de encuentro con los sliders de cada presa y observa cómo cambia la dieta óptima. Pulsa <em>setup</em> y luego <em>go</em>.",
           "intro_en": "Single forager in a 2D landscape with five prey types (guanaco, huemul, vizcacha, coypu, lizard). Adjust the encounter rates with each prey's slider and watch how the optimal diet shifts. Press <em>setup</em> and then <em>go</em>.",
-          "height": 700
+          "height": 820
         }
       ]
     }
