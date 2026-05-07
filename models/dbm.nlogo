@@ -165,3 +165,321 @@ to-report total-energy
     [ report [total-kcal] of one-of foragers ]
     [ report 0 ]
 end
+@#$#@#$#@
+GRAPHICS-WINDOW
+500
+10
+918
+429
+-1
+-1
+8.0
+1
+10
+1
+1
+1
+0
+1
+1
+1
+-25
+25
+-25
+25
+1
+1
+1
+ticks
+30.0
+
+BUTTON
+10
+10
+105
+50
+NIL
+setup
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+115
+10
+220
+50
+NIL
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+10
+60
+220
+93
+lambda-guanaco
+lambda-guanaco
+0.001
+0.05
+0.005
+0.001
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+98
+220
+131
+lambda-huemul
+lambda-huemul
+0.001
+0.05
+0.008
+0.001
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+136
+220
+169
+lambda-vizcacha
+lambda-vizcacha
+0.01
+0.1
+0.05
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+174
+220
+207
+lambda-coypu
+lambda-coypu
+0.01
+0.1
+0.04
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+212
+220
+245
+lambda-lizard
+lambda-lizard
+0.05
+0.5
+0.2
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+250
+220
+283
+search-speed
+search-speed
+0.5
+3.0
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+MONITOR
+230
+60
+355
+105
+Diet breadth
+diet-breadth
+3
+1
+11
+
+MONITOR
+365
+60
+490
+105
+Encounters taken
+encounters-taken
+3
+1
+11
+
+MONITOR
+230
+115
+355
+160
+Encounters skipped
+encounters-skipped
+3
+1
+11
+
+MONITOR
+365
+115
+490
+160
+Avg return (kcal/h)
+current-return-rate
+3
+1
+11
+
+PLOT
+230
+170
+490
+295
+Cumulative energy
+ticks
+total-energy
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"energy" 1.0 0 -16777216 true "" "plot total-energy"
+
+PLOT
+230
+305
+490
+430
+Return rate (kcal/h)
+ticks
+rate
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"rate" 1.0 0 -2674135 true "" "plot current-return-rate"
+@#$#@#$#@
+## ¿Qué es?
+
+El **Diet Breadth Model (DBM)** es uno de los modelos fundacionales de la ecología del comportamiento humano (HBE) en arqueología. Predice qué tipos de presa debe incluir un forrajero racional en su dieta para maximizar la tasa de retorno energético a largo plazo.
+
+## Cómo funciona
+
+Un único forrajero recorre un paisaje 2D con cinco tipos de presa: guanaco, huemul, vizcacha, coypu y lagartija. Cada presa tiene un contenido energético (kcal) y un tiempo de manejo (horas). El rango de la presa es e/h.
+
+En cada encuentro, el forrajero aplica la regla del DBM:
+
+> Tomar la presa si y solo si su rango (e/h) supera la tasa de retorno promedio R(D) de la dieta actualmente aceptada.
+
+R(D) = Σ λ_j e_j / (1 + Σ λ_j h_j)
+
+## Cómo usar
+
+1. Ajusta las tasas de encuentro de cada presa con los **sliders** (lambda-*).
+2. Pulsa **setup** para crear el paisaje.
+3. Pulsa **go** para iniciar la simulación.
+4. Observa cómo cambia la **diet breadth** (número de tipos de presa aceptados) en función de la disponibilidad relativa de las presas de alto rango.
+
+## Predicciones
+
+- **Predicción 1**: el rango (e/h) no depende de la abundancia.
+- **Predicción 2**: la abundancia de una presa solo importa para tipos rankeados por encima de ella.
+- **Predicción 3**: si las presas de alto rango se agotan, la dieta se amplía (firma arqueológica de intensificación).
+
+## Referencias
+
+- Bettinger, R. L. (2009). *Hunter-Gatherer Foraging: Five Simple Models*. Eliot Werner.
+- Charnov, E. L. (1976). Optimal foraging: attack strategy of a mantid. *American Naturalist* 110: 141–151.
+- Stephens, D. W. & Krebs, J. R. (1986). *Foraging Theory*. Princeton University Press.
+
+Parte del proyecto **ArchALife** (archalife.github.io/archalife). CC BY-SA 4.0.
+@#$#@#$#@
+default
+true
+0
+Polygon -7500403 true true 150 5 40 250 150 205 260 250
+
+circle
+false
+0
+Circle -7500403 true true 0 0 300
+
+circle 2
+false
+0
+Circle -7500403 true true 16 16 270
+Circle -16777216 true false 46 46 210
+
+person
+false
+0
+Circle -7500403 true true 110 5 80
+Polygon -7500403 true true 105 90 120 195 90 285 105 300 135 300 150 225 165 300 195 300 210 285 180 195 195 90
+Rectangle -7500403 true true 127 79 172 94
+Polygon -7500403 true true 195 90 240 150 225 180 165 105
+Polygon -7500403 true true 105 90 60 150 75 180 135 105
+
+square
+false
+0
+Rectangle -7500403 true true 30 30 270 270
+@#$#@#$#@
+NetLogo 6.4.0
+@#$#@#$#@
+@#$#@#$#@
+@#$#@#$#@
+<experiments>
+</experiments>
+@#$#@#$#@
+@#$#@#$#@
+default
+0.0
+-0.2 0 0.0 1.0
+0.0 1 1.0 0.0
+0.2 0 0.0 1.0
+link direction
+true
+0
+Line -7500403 true 150 150 90 180
+Line -7500403 true 150 150 210 180
+@#$#@#$#@
+0
+@#$#@#$#@
