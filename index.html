@@ -275,6 +275,166 @@ button { font-family: inherit; }
 .canvas.grabbing { cursor: grabbing; }
 .canvas svg { width: 100%; height: 100%; display: block; }
 
+/* ━━━━━━━━━━━━ ACADEMIC CONTENT · math, code, NetLogo simulations ━━━━━━━━━━━━
+
+   Estilos para el contenido académico avanzado dentro del cuaderno:
+     · KaTeX display equations · numeradas automáticamente con CSS counter
+     · Bloques de código Python · estética dark night, ocre/musgo/pizarra
+     · Embebidos de NetLogo Web · iframe responsive con borde de papel */
+
+/* Equation numbering · CSS counter sobre las display equations de KaTeX */
+.paper-body { counter-reset: equation; }
+.paper-body .katex-display {
+  position: relative;
+  counter-increment: equation;
+  padding-right: 50px;
+  margin: 1.4em 0;
+}
+.paper-body .katex-display::after {
+  content: "(" counter(equation) ")";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78em;
+  color: var(--paper-mute);
+}
+.paper-body .katex { font-size: 1.05em; color: var(--paper-ink); }
+.paper-body .katex-display { color: var(--paper-ink); }
+
+/* Bloques de código · dark night style (la usuaria votó por (b)) */
+.paper-body pre[class*="language-"] {
+  background: #0c1218;
+  color: #d4c8a8;
+  border: 1px solid rgba(224, 149, 88, 0.18);
+  border-left: 3px solid var(--ochre-deep);
+  border-radius: 2px;
+  padding: 16px 20px;
+  margin: 1.6em 0;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  font-feature-settings: 'liga' 0;
+  box-shadow: 0 2px 16px rgba(7, 9, 13, 0.18);
+}
+.paper-body pre[class*="language-"] code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+}
+.paper-body :not(pre) > code {
+  background: rgba(224, 149, 88, 0.14);
+  border: 1px solid rgba(224, 149, 88, 0.28);
+  color: var(--ochre-deep);
+  padding: 1px 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  border-radius: 2px;
+}
+/* Prism · sobreescritura de tokens para nuestra paleta */
+.paper-body .token.comment,
+.paper-body .token.prolog,
+.paper-body .token.doctype,
+.paper-body .token.cdata { color: rgba(154, 176, 200, 0.55); font-style: italic; }
+.paper-body .token.punctuation { color: rgba(212, 200, 168, 0.7); }
+.paper-body .token.property,
+.paper-body .token.tag,
+.paper-body .token.boolean,
+.paper-body .token.number,
+.paper-body .token.constant,
+.paper-body .token.symbol,
+.paper-body .token.deleted { color: #f0a868; }
+.paper-body .token.selector,
+.paper-body .token.attr-name,
+.paper-body .token.string,
+.paper-body .token.char,
+.paper-body .token.builtin,
+.paper-body .token.inserted { color: #a8c280; }
+.paper-body .token.operator,
+.paper-body .token.entity,
+.paper-body .token.url,
+.paper-body .token.variable { color: #d4c8a8; }
+.paper-body .token.atrule,
+.paper-body .token.attr-value,
+.paper-body .token.function,
+.paper-body .token.class-name { color: #e09558; }
+.paper-body .token.keyword { color: #f0a868; font-weight: 600; }
+.paper-body .token.regex,
+.paper-body .token.important { color: #b8612e; }
+
+/* NetLogo Web simulations · contenedor con encabezado, intro y iframe lazy */
+.paper-simulation {
+  margin: 2.4em 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 1.6em 0;
+}
+.paper-simulation-head {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 1.4rem;
+  font-weight: 400;
+  margin: 0 0 0.6em;
+  color: var(--paper-ink);
+}
+.paper-simulation-head .num {
+  color: var(--ochre);
+  font-style: normal;
+  margin-right: 0.4em;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78em;
+  vertical-align: 2px;
+}
+.paper-simulation-frame {
+  margin: 1em 0;
+  background: #0c1218;
+  border: 1px solid rgba(224, 149, 88, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+.paper-simulation-frame iframe {
+  display: block;
+  width: 100%;
+  background: #fff;
+}
+.paper-simulation-load {
+  background: transparent;
+  border: 1px solid var(--paper-mute);
+  color: var(--paper-soft);
+  padding: 14px 28px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: color 0.25s, border-color 0.25s, background 0.25s;
+  margin: 32px 0;
+}
+.paper-simulation-load:hover {
+  color: var(--ochre-bright);
+  border-color: var(--ochre);
+  background: rgba(224, 149, 88, 0.08);
+}
+.paper-simulation-source {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--paper-mute);
+  margin-top: 0.6em;
+}
+.paper-simulation-source code {
+  background: transparent;
+  border: none;
+  color: var(--ochre-deep);
+  padding: 0;
+}
+
 /* Banner cuando una entrada solo está disponible en español
    y el visitante está en modo EN. Tipografía mono pequeña, ocre tenue. */
 .read-translation-pending,
@@ -1527,7 +1687,7 @@ body.in-entry { background: var(--paper-bg); }
 /* ━━━━━━━━━━━━ 1. DATA ━━━━━━━━━━━━ */
 /* El contenido del jardín vive en data.json. Para añadir o editar entradas,
    autores u obras, edita ese archivo — no toques este HTML. */
-const __archalifeData = await fetch('./data.json').then(r => {
+const __archalifeData = await fetch('./data.json', { cache: 'no-cache' }).then(r => {
   if (!r.ok) throw new Error(`No se pudo cargar data.json (${r.status})`);
   return r.json();
 });
@@ -1552,6 +1712,13 @@ if (!__isProduction) {
   console.info(`%c⌖ ArchALife · modo borrador`, 'color: #e09558; font-weight: 600',
     `\nEntorno: ${location.hostname || 'local'} · ${NODES.length} nodos visibles (incluyendo drafts)`);
 }
+
+/* currentLang · declarado temprano para que los helpers nodeField()
+   y nodeFieldFromObj() (function declarations hoisted) puedan leer
+   la variable al construir el SVG inicial. La sección i18n completa
+   con STRINGS y applyI18n vive más abajo en el módulo, junto al
+   resto de la lógica de UI. */
+let currentLang = 'es';
 
 const WOLFRAM_RULES = [
   // Class IV · estructuras complejas, computación universal
@@ -2050,7 +2217,7 @@ nodes.forEach((n, i) => {
   lbl.setAttribute('x', 0);
   lbl.setAttribute('y', coreR + 18);
   lbl.setAttribute('text-anchor', 'middle');
-  lbl.textContent = n.label;
+  lbl.textContent = nodeField(n, 'label');
   g.appendChild(lbl);
 
   g.addEventListener('mousedown', (ev) => { ev.stopPropagation(); dragging = n; alpha = 0.5; });
@@ -2069,7 +2236,7 @@ nodes.forEach((n, i) => {
 
 function showTooltip(ev, n) {
   const stateLabel = n.type === 'entry' ? `entry · ${n.state}` : n.type;
-  tooltip.innerHTML = `<span class="tt-title">${n.label}</span><span class="tt-meta">${stateLabel} · uid-${padId(n.id).slice(0,6)} · deg ${n.degree}</span>`;
+  tooltip.innerHTML = `<span class="tt-title">${nodeField(n, 'label')}</span><span class="tt-meta">${stateLabel} · uid-${padId(n.id).slice(0,6)} · deg ${n.degree}</span>`;
   tooltip.style.opacity = '1';
   tooltip.style.left = (ev.clientX + 16) + 'px';
   tooltip.style.top  = (ev.clientY + 14) + 'px';
@@ -2374,6 +2541,9 @@ function startViajeCA(rule, opts = {}) {
   const ctx = viajeCanvas.getContext('2d');
   const W = viajeCanvas.width = window.innerWidth;
   const H = viajeCanvas.height = window.innerHeight;
+  // Defensa · si el viewport tiene tamaño 0 (puede pasar en iframes
+  // o transiciones), no podemos correr el CA · devolvemos no-op.
+  if (W <= 0 || H <= 0) return () => {};
   const cell = opts.cell || 4;
   const cols = Math.ceil(W / cell);
   const rowsTotal = Math.ceil(H / cell);
@@ -2407,11 +2577,19 @@ function startViajeCA(rule, opts = {}) {
       y++;
     }
     if (y >= rowsTotal && opts.loop) {
-      // loop: shift up and continue at bottom
-      const imageData = ctx.getImageData(0, cell, W, H - cell);
-      ctx.fillStyle = '#04060a';
-      ctx.fillRect(0, H - cell, W, cell);
-      ctx.putImageData(imageData, 0, 0);
+      // loop: shift up and continue at bottom · protegido contra
+      // tamaños 0 por si el viewport se redimensionó durante el ciclo.
+      if (W > 0 && H - cell > 0) {
+        try {
+          const imageData = ctx.getImageData(0, cell, W, H - cell);
+          ctx.fillStyle = '#04060a';
+          ctx.fillRect(0, H - cell, W, cell);
+          ctx.putImageData(imageData, 0, 0);
+        } catch (err) {
+          // viewport probablemente colapsó · cancelar el loop
+          stopped = true;
+        }
+      }
       y = rowsTotal - 1;
     }
     if (y < rowsTotal || opts.loop) viajeRAF = requestAnimationFrame(step);
@@ -2465,7 +2643,7 @@ async function goToEntry(n) {
   // 2. show overlay + start CA
   viajeOverlay.classList.add('on');
   viajeLabel.classList.remove('fade');
-  viajeLabel.innerHTML = `⌖ cultivando<span class="sub">${n.label}</span>`;
+  viajeLabel.innerHTML = `⌖ ${currentLang === 'en' ? 'cultivating' : 'cultivando'}<span class="sub">${nodeField(n, 'label')}</span>`;
   const rule = ruleForNode(n);
   const stopCA = startViajeCA(rule, { cell: 4, rowsPerFrame: 4, loop: true });
 
@@ -2626,6 +2804,13 @@ function renderEntry(n) {
   const isPref = n.id === 'pref-att';
   const isObsi = n.id === 'obsidiana';
 
+  // Si el nodo declara body_es/body_en (campos bilingües), usamos ESE body
+  // como contenido principal del cuaderno · saltamos las secciones hardcoded
+  // ("Encuadre" y los stubs isManifesto/isFEP/isPref/isObsi) y dejamos que
+  // el autor controle su propia estructura (h2, equations, code, etc.).
+  // El manifiesto antiguo (que solo tiene body plano) usa el template hardcoded.
+  const hasCustomBody = !!(n.body_es || n.body_en);
+
   view.innerHTML = `
     <div class="paper-page">
       <div class="paper-stamp">arXiv:${arxivId}v1 [cs.MA · soc-anth] · ${today}</div>
@@ -2666,6 +2851,8 @@ function renderEntry(n) {
         <div class="paper-rule"></div>
 
         <div class="paper-body">
+
+          ${hasCustomBody ? `<div class="paper-body-custom">${bodyText}</div>` : `
 
           <h2><span class="num">1.</span>${t('sectionFraming')}</h2>
 
@@ -2753,14 +2940,30 @@ print(f'primary hub: {hub} · BC={bc[hub]:.4f}')
           <h2><span class="num">${isObsi || isManifesto ? 5 : (isFEP || isPref ? 4 : 5)}.</span>${t('sectionRelations')}</h2>
           <p>Las primeras ${Math.min(rels.length, 5)} relaciones tipadas que parten de este nodo son: ${rels.slice(0, 5).map(r => `<em>${r.kind}</em> ${r.target.label}`).join('; ')}.</p>
           ` : ''}
+          `}
 
-          <div class="paper-footnotes">
+          ${hasCustomBody ? '' : `<div class="paper-footnotes">
             <ol>
               <li>Esta lectura no es ortodoxa en ciencia social cuantitativa, donde la regresión sigue siendo la lengua franca. La elección de ABM aquí responde a una tesis específica sobre la naturaleza emergente de los fenómenos prehistóricos sudamericanos, no a una preferencia técnica.</li>
               <li>El campo <em>BD_Consolidada</em> se mantiene como CSV versionado en git con regeneración automática del grafo a cada commit. La cifra de 741 muestras puede actualizarse al alza si Frugone <em>et al.</em> publican el transecto cordillerano pendiente.</li>
               <li>El símbolo <span class="m">η</span> denota provisionalmente la posición del nodo en una posible jerarquía, sin compromiso ontológico fuerte.</li>
             </ol>
-          </div>
+          </div>`}
+
+          ${(n.simulations || []).map((sim, i) => {
+            const sTitle = nodeFieldFromObj(sim, 'title') || 'Simulación';
+            const sIntro = nodeFieldFromObj(sim, 'intro') || '';
+            const fullSrc = sim.src.startsWith('http') ? sim.src : `${location.origin}${location.pathname.replace(/[^\/]*$/, '')}${sim.src}`;
+            return `
+            <div class="paper-simulation" data-sim-src="${fullSrc}" data-sim-height="${sim.height || 700}">
+              <h2 class="paper-simulation-head"><span class="num">⌖</span>${sTitle}</h2>
+              ${sIntro ? `<p>${sIntro}</p>` : ''}
+              <div class="paper-simulation-frame">
+                <button class="paper-simulation-load" type="button">▶ ${currentLang === 'en' ? 'Load NetLogo simulation' : 'Cargar simulación NetLogo'}</button>
+              </div>
+              <div class="paper-simulation-source">${currentLang === 'en' ? 'Source' : 'Fuente'}: <code>${sim.src.split('/').pop()}</code></div>
+            </div>`;
+          }).join('')}
 
           <div class="paper-references">
             <h2>${t('sectionReferences')}</h2>
@@ -2779,6 +2982,91 @@ print(f'primary hub: {hub} · BC={bc[hub]:.4f}')
     </div>
   `;
   drawPaperFigure(n);
+  // post-render · activa KaTeX (math) y Prism (código). Si las libs aún no están
+  // cargadas, las trae perezosamente y luego renderiza. Las simulaciones NetLogo
+  // tienen su propio botón "Cargar simulación" para iframe lazy.
+  postRenderAcademic(view, n);
+}
+
+/* ━━━━━━━━━━━━ ACADEMIC LIBS · KaTeX + Prism + NetLogo Web ━━━━━━━━━━━━
+
+   Cargas perezosas · sólo se descargan cuando un cuaderno se abre.
+   · KaTeX (~95 KB total con CSS) · LaTeX matemático · auto-render
+     descubre $...$ y $$...$$ en el DOM y los reemplaza por SVG.
+   · Prism (~10 KB total con grammar python) · syntax highlighting
+     en bloques <pre><code class="language-python">.
+   · NetLogo Web (~3 MB la primera vez, después cacheado) · embebido
+     vía iframe contra netlogoweb.org/launch#URL · sólo se carga
+     cuando el visitante pulsa el botón "Cargar simulación". */
+
+let academicLibsPromise = null;
+async function loadAcademicLibs() {
+  if (academicLibsPromise) return academicLibsPromise;
+  academicLibsPromise = (async () => {
+    // KaTeX CSS
+    if (!document.querySelector('link[data-katex]')) {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css';
+      css.dataset.katex = '1';
+      document.head.appendChild(css);
+    }
+    // KaTeX JS + auto-render extension
+    const katexMod = await import('https://esm.sh/katex@0.16.10');
+    const autoMod = await import('https://esm.sh/katex@0.16.10/contrib/auto-render');
+    window.__katex = katexMod.default || katexMod;
+    window.__renderMath = autoMod.default || autoMod;
+    // Prism · core + python grammar
+    const PrismMod = await import('https://esm.sh/prismjs@1.29.0');
+    const Prism = PrismMod.default || PrismMod;
+    await import('https://esm.sh/prismjs@1.29.0/components/prism-python');
+    window.__Prism = Prism;
+    return { katex: window.__katex, renderMath: window.__renderMath, Prism };
+  })();
+  return academicLibsPromise;
+}
+
+async function postRenderAcademic(rootEl, node) {
+  // 1. cargar libs
+  let libs;
+  try {
+    libs = await loadAcademicLibs();
+  } catch (err) {
+    console.warn('partitura emergente · falló carga de KaTeX/Prism', err);
+    return;
+  }
+  // 2. render math · auto-detección de $...$ y $$...$$
+  if (libs.renderMath) {
+    libs.renderMath(rootEl, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\[', right: '\\]', display: true },
+        { left: '\\(', right: '\\)', display: false }
+      ],
+      throwOnError: false,
+      errorColor: '#b8612e',
+    });
+  }
+  // 3. syntax highlight Python (y otros si se añaden grammars en el futuro)
+  if (libs.Prism) {
+    rootEl.querySelectorAll('pre code[class*="language-"]').forEach(el => {
+      libs.Prism.highlightElement(el);
+    });
+  }
+  // 4. simulaciones NetLogo Web · adjuntar handler al botón "cargar"
+  rootEl.querySelectorAll('.paper-simulation').forEach(simEl => {
+    const btn = simEl.querySelector('.paper-simulation-load');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const src = simEl.dataset.simSrc;
+      const height = parseInt(simEl.dataset.simHeight || '700', 10);
+      if (!src) return;
+      const frame = simEl.querySelector('.paper-simulation-frame');
+      // cargar iframe a netlogoweb.org/launch#URL
+      frame.innerHTML = `<iframe src="https://netlogoweb.org/launch#${src}" width="100%" height="${height}" frameborder="0" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen" title="NetLogo Web simulation"></iframe>`;
+    }, { once: true });
+  });
 }
 
 function drawPaperFigure(n) {
@@ -2928,6 +3216,9 @@ function drawNetworkHero(ctx, c) {
        por "es" usa ES, en cualquier otro caso EN.
      · El toggle ES/EN del UI ya está en HTML; aquí lo cableamos. */
 
+// Las declaraciones de STRINGS, applyI18n, etc. siguen aquí.
+// currentLang se declaró arriba (cerca de los datos) para evitar TDZ
+// cuando los helpers nodeField se llaman al construir el SVG.
 const STRINGS = {
   es: {
     // chrome
@@ -3005,8 +3296,6 @@ const STRINGS = {
   }
 };
 
-let currentLang = 'es';
-
 function pickInitialLang() {
   const saved = localStorage.getItem('archalifeLang');
   if (saved === 'es' || saved === 'en') return saved;
@@ -3058,6 +3347,18 @@ function nodeMissingTranslation(n, base) {
   return currentLang === 'en' && !n[base + '_en'];
 }
 
+// helper · igual que nodeField pero para cualquier objeto (no sólo nodos
+// raíz). Útil para campos bilingües dentro de simulations[].
+function nodeFieldFromObj(obj, base) {
+  if (!obj) return '';
+  const enKey = base + '_en';
+  const esKey = base + '_es';
+  if (currentLang === 'en' && obj[enKey]) return obj[enKey];
+  if (currentLang === 'en' && !obj[enKey] && obj[esKey]) return obj[esKey];
+  if (obj[esKey]) return obj[esKey];
+  return obj[base] || '';
+}
+
 // cablear los botones del toggle
 document.querySelectorAll('.lang-toggle button').forEach(b => {
   b.addEventListener('click', () => applyI18n(b.dataset.lang));
@@ -3066,14 +3367,22 @@ document.querySelectorAll('.lang-toggle button').forEach(b => {
 // re-render de partes dinámicas cuando cambia el idioma (panel y cuaderno
 // se generan en JS, así que data-i18n no los alcanza · necesitan re-build)
 window.addEventListener('archalife:lang', () => {
+  // 1. labels SVG de los nodos del jardín · uno por nodo, escritos en .glabel
+  nodeEls.forEach((g, i) => {
+    const lbl = g.querySelector('text.glabel');
+    if (lbl) lbl.textContent = nodeField(nodes[i], 'label');
+  });
+  // 2. si el panel lateral está abierto, re-renderizar
   const hashId = location.hash.slice(1);
   const node = hashId && nodeIdx[hashId] !== undefined ? NODES[nodeIdx[hashId]] : null;
   if (node && document.getElementById('panel').classList.contains('open')) {
     openPanel(node);
   }
+  // 3. si el cuaderno está abierto, re-renderizar
   if (node && viewMode === 'entry') {
     renderEntry(node);
   }
+  // 4. song-egg dinámico
   if (typeof updateSongExplain === 'function') updateSongExplain();
   if (typeof refreshSongUI === 'function') refreshSongUI();
 });

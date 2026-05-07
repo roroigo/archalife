@@ -17,6 +17,40 @@
       "state": "budding",
       "featured": true,
       "body": "<em>Una posición desde la arqueología del Cono Sur</em> · Mendoza-Sánchez · <em>arxiv:archalife.SOCART.001v1</em> · abril 2026<br><br>El término <em>sociedad artificial</em>, popularizado por Epstein y Axtell (1996) en el contexto del modelado basado en agentes (ABM), contiene una contradicción semántica productiva. <em>Artificial</em>, del latín <em>ars + facere</em>, designa lo hecho por arte, lo construido. En sentido riguroso, toda sociedad humana es artificial. La novedad de los años noventa no fue inventar sociedades artificiales sino construir un dispositivo computacional capaz de hacerlas crecer en silicio.<br><br>Tres tesis articuladas: <strong>(i)</strong> la arqueología prehistórica está estructuralmente en condiciones de aportar al campo de la simulación social generativa, pero permanece marginal en sus revisiones sistemáticas; <strong>(ii)</strong> las redes de circulación lítica del Cono Sur prehispánico —94 sitios, 22 fuentes, 741 muestras de la BD_Consolidada— constituyen un caso paradigmático para hacer <em>pattern-oriented modeling</em> con datos arqueológicos como criterio de validación; <strong>(iii)</strong> las tres tendencias que la literatura reciente identifica como frontera del campo —validación rigurosa, <em>building blocks</em> reutilizables, integración con IA— coinciden con compromisos metodológicos que la arqueología computacional desde el sur global puede asumir productivamente.<br><br><em>Las sociedades artificiales no son un futuro a imaginar. Son un pasado a recordar con dispositivos formales.</em>"
+    },
+    {
+      "id": "neutral-walk",
+      "type": "entry",
+      "draft": true,
+      "label_es": "Procura lítica neutral",
+      "label_en": "Neutral lithic procurement",
+      "title_es": "Procura lítica como caminata aleatoria neutral",
+      "title_en": "Lithic procurement as a neutral random walk",
+      "subtitle_es": "Hipótesis nula antes de invocar mecanismos sociales",
+      "subtitle_en": "Null hypothesis before invoking social mechanisms",
+      "arxivId": "archalife.SOCART.002",
+      "authors": [
+        { "name": "R. Mendoza-Sánchez", "sup": "a,1" }
+      ],
+      "affiliations": [
+        { "sup": "a", "text": "departamento de ciencias sociales · universidad católica de temuco · concepción, chile" },
+        { "sup": "1", "text": "ARKdrone · ArkeoAI" }
+      ],
+      "state": "seedling",
+      "featured": false,
+      "body_es": "<p><em>[Placeholder · este nodo está en cultivo. El contenido real será reemplazado cuando termine el manuscrito en LaTeX.]</em></p><p>Tomamos como punto de partida el modelo neutral de Brantingham (2003), que propone que la distribución observada de materias primas en sitios arqueológicos puede emerger de una caminata aleatoria sin estructura social impuesta. Para una célula del agente, la probabilidad de seleccionar la fuente $u$ desde el sitio $v$ es proporcional al grado:</p><p>$$P(v \\to u) = \\frac{k(u)}{\\sum_{w} k(w)}$$</p><p>donde $k(u)$ es el grado del nodo $u$ en el grafo bipartito sitio—fuente. Bajo este régimen, la centralidad emergente de Chan Chan 18 ($BC = 0{,}2274$) puede o no ser estadísticamente distinguible del modelo nulo. La pregunta operativa es: <em>¿qué fracción de la centralidad observada queda como residual al descontar la caminata aleatoria neutral?</em></p><p>Implementación mínima del paso de simulación en Python:</p><pre><code class=\"language-python\">import numpy as np\nimport networkx as nx\n\ndef neutral_step(G: nx.Graph, current: int, rng: np.random.Generator) -> int:\n    \"\"\"Un paso de caminata neutral con apego preferencial al grado.\"\"\"\n    neighbors = list(G.neighbors(current))\n    weights = np.array([G.degree(n) for n in neighbors], dtype=float)\n    if weights.sum() == 0:\n        return rng.choice(neighbors)\n    probs = weights / weights.sum()\n    return rng.choice(neighbors, p=probs)\n\ndef simulate(G: nx.Graph, start: int, n_steps: int = 1000, seed: int = 42):\n    rng = np.random.default_rng(seed)\n    visits = {n: 0 for n in G.nodes}\n    current = start\n    for _ in range(n_steps):\n        current = neutral_step(G, current, rng)\n        visits[current] += 1\n    return visits</code></pre><p>El bloque siguiente embebe el modelo NetLogo de referencia (placeholder · sustituir por el modelo de Brantingham cuando esté listo). El visitante puede pulsar <em>setup</em> y luego <em>go</em> dentro del simulador para ver la dinámica.</p>",
+      "body_en": "<p><em>[Placeholder · this node is in cultivation. The real content will replace this once the LaTeX manuscript is finished.]</em></p><p>We start from Brantingham's (2003) neutral model, which proposes that the observed distribution of raw materials at archaeological sites can emerge from a random walk without imposed social structure. For an agent at site $v$, the probability of selecting source $u$ is proportional to degree:</p><p>$$P(v \\to u) = \\frac{k(u)}{\\sum_{w} k(w)}$$</p><p>where $k(u)$ is the degree of node $u$ in the bipartite site—source graph. Under this regime, the emergent centrality of Chan Chan 18 ($BC = 0.2274$) may or may not be statistically distinguishable from the null model. The operational question is: <em>what fraction of the observed centrality remains as residual after subtracting the neutral random walk?</em></p><p>Minimal Python implementation of the simulation step:</p><pre><code class=\"language-python\">import numpy as np\nimport networkx as nx\n\ndef neutral_step(G: nx.Graph, current: int, rng: np.random.Generator) -> int:\n    \"\"\"One neutral walk step with preferential attachment to degree.\"\"\"\n    neighbors = list(G.neighbors(current))\n    weights = np.array([G.degree(n) for n in neighbors], dtype=float)\n    if weights.sum() == 0:\n        return rng.choice(neighbors)\n    probs = weights / weights.sum()\n    return rng.choice(neighbors, p=probs)\n\ndef simulate(G: nx.Graph, start: int, n_steps: int = 1000, seed: int = 42):\n    rng = np.random.default_rng(seed)\n    visits = {n: 0 for n in G.nodes}\n    current = start\n    for _ in range(n_steps):\n        current = neutral_step(G, current, rng)\n        visits[current] += 1\n    return visits</code></pre><p>The block below embeds the reference NetLogo model (placeholder · to be replaced by Brantingham's model when ready). The visitor can press <em>setup</em> and then <em>go</em> inside the simulator to observe the dynamics.</p>",
+      "simulations": [
+        {
+          "id": "schelling-placeholder",
+          "src": "https://netlogoweb.org/assets/modelslib/Sample%20Models/Social%20Science/Segregation.nlogo",
+          "title_es": "Segregación de Schelling (placeholder)",
+          "title_en": "Schelling segregation (placeholder)",
+          "intro_es": "Modelo de muestra de NetLogo Web. Será reemplazado por el modelo de procura neutral de Brantingham cuando esté listo.",
+          "intro_en": "NetLogo Web sample model. To be replaced by Brantingham's neutral procurement model once it's ready.",
+          "height": 700
+        }
+      ]
     }
   ],
   "edges": []
