@@ -135,6 +135,39 @@ button { font-family: inherit; }
   z-index: 5;
 }
 
+/* ━━━━━━━━━━━━ LANG TOGGLE · ES/EN, top-right ━━━━━━━━━━━━ */
+.lang-toggle {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 51;
+  display: inline-flex;
+  border: 1px solid var(--paper-faint);
+  background: rgba(7, 9, 13, 0.6);
+  pointer-events: auto;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.lang-toggle button {
+  padding: 5px 11px;
+  background: transparent;
+  border: none;
+  color: var(--paper-mute);
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  transition: color 0.2s, background 0.2s;
+  border-right: 1px solid var(--paper-faint);
+}
+.lang-toggle button:last-child { border-right: none; }
+.lang-toggle button.active { background: var(--ochre); color: var(--night); }
+.lang-toggle button:hover:not(.active) { color: var(--paper); }
+/* Keep the toggle visible in both views — sky and entry — so the
+   reader can switch language at any time, even mid-read. */
+
 /* ━━━━━━━━━━━━ TITLE LOCKUP · top-center, retracted ━━━━━━━━━━━━ */
 .lockup {
   position: fixed;
@@ -241,6 +274,25 @@ button { font-family: inherit; }
 }
 .canvas.grabbing { cursor: grabbing; }
 .canvas svg { width: 100%; height: 100%; display: block; }
+
+/* Banner cuando una entrada solo está disponible en español
+   y el visitante está en modo EN. Tipografía mono pequeña, ocre tenue. */
+.read-translation-pending,
+.paper-translation-pending {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--ochre);
+  border-left: 2px solid var(--ochre-deep);
+  padding: 6px 10px;
+  margin: 10px 0;
+  background: rgba(224, 149, 88, 0.08);
+}
+.paper-translation-pending {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  margin: 16px 0 28px;
+}
 
 /* dendrites — organic neural growth from the root */
 .dendrite {
@@ -1359,8 +1411,14 @@ body.in-entry { background: var(--paper-bg); }
   <a class="brand" id="brand-link">Arch<span class="a">A</span>Life</a>
 </div>
 
+<!-- lang toggle · ES/EN · top-right · funcional, persiste en localStorage -->
+<div class="lang-toggle" id="lang-toggle">
+  <button data-lang="es">ES</button>
+  <button data-lang="en">EN</button>
+</div>
+
 <!-- back to sky · botón de volver al jardín, visible solo en cuaderno -->
-<button class="back-to-sky" id="back-to-sky">← <em>volver al cuaderno</em></button>
+<button class="back-to-sky" id="back-to-sky" data-i18n="backToSky">← <em>volver al cuaderno</em></button>
 
 <!-- ANCHOR · cita-fundacional sobre el patrón Wolfram bg -->
 <div class="anchor" id="anchor">
@@ -1414,7 +1472,7 @@ body.in-entry { background: var(--paper-bg); }
   <div class="read-head">
     <div class="read-id"><span id="panel-type">ENTRY</span><span class="sep">·</span><span class="uid" id="panel-uid">UID-000</span></div>
     <div class="read-actions">
-      <button class="read-btn primary" id="btn-read-full">leer completo →</button>
+      <button class="read-btn primary" id="btn-read-full" data-i18n="readFull">leer completo →</button>
       <button class="read-btn" id="btn-close">✕</button>
     </div>
   </div>
@@ -2066,21 +2124,32 @@ function openPanel(n) {
   const rels = relationsFor(n.id);
   const isEntry = n.type === 'entry';
   const stateClass = n.state ? `state-${n.state}` : '';
-  const stateLabel = n.state ? n.state.replace('seedling','semilla').replace('budding','en cultivo').replace('evergreen','estable').toUpperCase() : '';
+  // pill de estado · traducido vía t() en lugar del .replace() en cadena
+  const stateLabel = n.state
+    ? t('state' + n.state.charAt(0).toUpperCase() + n.state.slice(1))
+    : '';
+  // label del nodo · si trae label_es/label_en lo respeta, si no cae al label plano
+  const nodeLabel = nodeField(n, 'label');
 
+  // body bilingüe · si solo hay versión ES en EN-mode, mostrar nota
+  const bodyText = nodeField(n, 'body');
+  const missingBanner = nodeMissingTranslation(n, 'body')
+    ? `<p class="read-translation-pending">${t('onlyInSpanish')}</p>`
+    : '';
   panelBody.innerHTML = `
     <div class="read-meta">
       ${isEntry && n.state ? `<span class="pill ${stateClass}"><span class="dot"></span>${stateLabel}</span>` : ''}
-      ${n.featured ? `<span class="pill" style="border-color:var(--ochre);color:var(--ochre-bright)">★ featured</span>` : ''}
+      ${n.featured ? `<span class="pill" style="border-color:var(--ochre);color:var(--ochre-bright)">${t('stateFeatured')}</span>` : ''}
       <span class="pill">${n.type.toUpperCase()}</span>
       <span class="pill">degree ${n.degree}</span>
     </div>
-    <h2 class="read-title">${n.label}</h2>
-    <p class="read-dek">${n.body}</p>
+    <h2 class="read-title">${nodeLabel}</h2>
+    ${missingBanner}
+    <p class="read-dek">${bodyText}</p>
     <div class="read-relations">
-      <div class="head"><span>[ relations ]</span><span class="count">${rels.length}</span></div>
+      <div class="head"><span>${t('relations')}</span><span class="count">${rels.length}</span></div>
       <ul>
-        ${rels.map(r => `<li data-id="${r.target.id}"><span class="kind">${r.kind}</span><span class="target">${r.target.label}</span></li>`).join('') || '<li><span class="kind">—</span><span class="target">no relations declared</span></li>'}
+        ${rels.map(r => `<li data-id="${r.target.id}"><span class="kind">${r.kind}</span><span class="target">${nodeField(r.target, 'label')}</span></li>`).join('') || `<li><span class="kind">—</span><span class="target">${t('noRelations')}</span></li>`}
       </ul>
     </div>
   `;
@@ -2513,18 +2582,26 @@ window.addEventListener('popstate', async (e) => {
    (isManifesto, isFEP, isPref, isObsi) son stubs editoriales —
    cuando un nodo concreto necesita más estructura se añade aquí. */
 function renderEntry(n) {
-  const stateLabel = n.state ? n.state.replace('seedling','semilla').replace('budding','en cultivo').replace('evergreen','estable') : '';
+  const stateLabel = n.state ? t('state' + n.state.charAt(0).toUpperCase() + n.state.slice(1)).toLowerCase() : '';
   const rels = relationsFor(n.id);
   const view = document.getElementById('view-entry');
-  const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+  // formato de fecha según idioma
+  const dateLocale = currentLang === 'en' ? 'en-US' : 'es-ES';
+  const today = new Date().toLocaleDateString(dateLocale, { day: '2-digit', month: 'long', year: 'numeric' });
   // arxivId · si el nodo lo tiene declarado en data.json, lo usamos tal cual.
   // Si no, lo generamos a partir del id como fallback.
   const arxivId = n.arxivId || `archalife.${padId(n.id)}.${(n.id.length * 7 + 23).toString().padStart(3,'0')}`;
 
-  // a couple of optional title-italic helpers · si el nodo trae un title
-  // largo aparte, lo usamos como título del cuaderno; si no, fallback al label.
-  const titleHTML = ((n.title || n.label) || '').replace(/(\(\d{4}\))/, '<em>$1</em>');
-  const subtitleHTML = n.subtitle || ((n.body || '').split('.').slice(0,1).join('.') + '.');
+  // título y subtítulo · bilingüe vía nodeField, con fallback a label/body
+  const rawTitle = nodeField(n, 'title') || nodeField(n, 'label') || '';
+  const titleHTML = rawTitle.replace(/(\(\d{4}\))/, '<em>$1</em>');
+  const rawSubtitle = nodeField(n, 'subtitle');
+  const subtitleHTML = rawSubtitle || ((nodeField(n, 'body') || '').split('.').slice(0,1).join('.') + '.');
+  // body bilingüe + banner si solo hay versión ES en EN-mode
+  const bodyText = nodeField(n, 'body');
+  const translationBanner = nodeMissingTranslation(n, 'body')
+    ? `<div class="paper-translation-pending">${t('onlyInSpanish')}</div>`
+    : '';
   // autores y afiliaciones · vienen del JSON si están declarados.
   // Fallback al equipo por defecto del laboratorio.
   const authorsArr = n.authors || [
@@ -2555,7 +2632,7 @@ function renderEntry(n) {
       <div class="paper-inner">
 
         <div class="paper-runhead">
-          <span><em>ArchALife</em> · cuaderno de cultivos · vol. 0, n.º ${padId(n.id)}</span>
+          <span><em>ArchALife</em> · ${t('runningHead')} · vol. 0, n.º ${padId(n.id)}</span>
           <span class="pgnum">1</span>
         </div>
 
@@ -2564,11 +2641,13 @@ function renderEntry(n) {
           <div class="paper-subtitle">${subtitleHTML}</div>
           <div class="paper-authors">${authorsHTML}</div>
           ${affiliationsHTML}
-          <div class="paper-date">borrador · ${today}</div>
+          <div class="paper-date">${t('draftLabel')} · ${today}</div>
         </div>
 
+        ${translationBanner}
+
         <div class="paper-abstract">
-          <div class="head">Resumen</div>
+          <div class="head">${t('abstractHead')}</div>
           <div class="body">
             Este cuaderno documenta el estado actual de la entrada <em>${n.label}</em> dentro del jardín
             <em>ArchALife</em>, un proyecto de modelado generativo aplicado a la prehistoria del Cono Sur.
@@ -2579,7 +2658,7 @@ function renderEntry(n) {
             evidencia provisional; las preguntas abiertas, como contratos de trabajo público.
           </div>
           <div class="paper-keywords">
-            <span class="lbl">Palabras clave:</span>
+            <span class="lbl">${t('keywordsLabel')}</span>
             ${[n.type, ...(n.tags || []).slice(0,3), 'generative social science', 'cono sur'].filter(Boolean).map(t => t.toLowerCase()).join('; ')}.
           </div>
         </div>
@@ -2588,7 +2667,7 @@ function renderEntry(n) {
 
         <div class="paper-body">
 
-          <h2><span class="num">1.</span>Encuadre</h2>
+          <h2><span class="num">1.</span>${t('sectionFraming')}</h2>
 
           <p>Tomamos como punto de partida la formulación de Epstein: el modelo basado en agentes (<em>agent-based model</em>, ABM) no es un instrumento decorativo sino un criterio de validez. Una explicación social merece ese nombre cuando el patrón macroscópico observado <em>emerge</em> de las interacciones microscópicas postuladas, sin que una mano invisible —ni del modelador ni del Estado ni de la Historia con mayúscula— intervenga a posteriori.<span class="fn-mark">1</span></p>
 
@@ -2667,11 +2746,11 @@ print(f'primary hub: {hub} · BC={bc[hub]:.4f}')
           <p>El estado actual de la parcela es <em>${stateLabel || 'no declarado'}</em>. La cohorte 0 del proyecto se mantiene pre-pública: el material aquí presentado debe leerse como cuaderno abierto, con los riesgos epistémicos y de obsolescencia que ello implica.</p>
           ` : ''}
 
-          <h2><span class="num">${isObsi || isManifesto ? 4 : (isFEP || isPref ? 3 : 4)}.</span>Próximos cultivos</h2>
+          <h2><span class="num">${isObsi || isManifesto ? 4 : (isFEP || isPref ? 3 : 4)}.</span>${t('sectionNext')}</h2>
           <p>Tres direcciones abiertas se mantienen como <em>semilla</em> en este nodo: (a) refinar la crítica metodológica frente al riesgo de tautología; (b) integrar la entrada con sus ${rels.length} vecinas mediante relaciones tipadas más densas; (c) publicar el protocolo ODD completo del modelo correspondiente. Las contribuciones se canalizan vía <span class="paper-ref">foro.archalife-project.org/${n.id}</span>.</p>
 
           ${rels.length ? `
-          <h2><span class="num">${isObsi || isManifesto ? 5 : (isFEP || isPref ? 4 : 5)}.</span>Relaciones (extracto)</h2>
+          <h2><span class="num">${isObsi || isManifesto ? 5 : (isFEP || isPref ? 4 : 5)}.</span>${t('sectionRelations')}</h2>
           <p>Las primeras ${Math.min(rels.length, 5)} relaciones tipadas que parten de este nodo son: ${rels.slice(0, 5).map(r => `<em>${r.kind}</em> ${r.target.label}`).join('; ')}.</p>
           ` : ''}
 
@@ -2684,7 +2763,7 @@ print(f'primary hub: {hub} · BC={bc[hub]:.4f}')
           </div>
 
           <div class="paper-references">
-            <h2>Referencias</h2>
+            <h2>${t('sectionReferences')}</h2>
             <ol>
               <li>Epstein, J. M. (2006). <em>Generative Social Science: Studies in Agent-Based Computational Modeling</em>. Princeton University Press.</li>
               <li>Friston, K. (2010). The free-energy principle: a unified brain theory? <em>Nature Reviews Neuroscience</em>, 11(2), 127–138.</li>
@@ -2835,6 +2914,172 @@ function drawNetworkHero(ctx, c) {
   }
   pts.forEach(p => { ctx.fillStyle = 'rgba(224, 149, 88, 0.7)'; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, Math.PI*2); ctx.fill(); });
 }
+
+/* ━━━━━━━━━━━━ I18N · BILINGUAL ENGINE (ES/EN) ━━━━━━━━━━━━
+
+   Cómo funciona:
+     · STRINGS contiene cada cadena UI en los dos idiomas.
+     · applyI18n(lang) escribe en cada elemento [data-i18n="key"]
+       el valor correspondiente, cambia <html lang>, y dispara un
+       CustomEvent('archalife:lang') para que partes dinámicas
+       (renderEntry, song-egg) se re-rendericen si están abiertas.
+     · La preferencia se guarda en localStorage.archalifeLang.
+     · En la primera visita, detecta navigator.language; si empieza
+       por "es" usa ES, en cualquier otro caso EN.
+     · El toggle ES/EN del UI ya está en HTML; aquí lo cableamos. */
+
+const STRINGS = {
+  es: {
+    // chrome
+    backToSky: '← <em>volver al jardín</em>',
+    readFull: 'leer completo →',
+    panelClose: '✕',
+    relations: '[ relaciones ]',
+    noRelations: 'sin relaciones declaradas',
+    // pill states
+    stateSeedling: 'SEMILLA',
+    stateBudding: 'EN CULTIVO',
+    stateEvergreen: 'ESTABLE',
+    stateFeatured: '★ destacado',
+    // notebook
+    runningHead: 'cuaderno de cultivos',
+    pageWord: 'pág.',
+    abstractHead: 'Resumen',
+    keywordsLabel: 'Palabras clave:',
+    sectionFraming: 'Encuadre',
+    sectionNext: 'Próximos cultivos',
+    sectionRelations: 'Relaciones (extracto)',
+    sectionReferences: 'Referencias',
+    draftLabel: 'borrador',
+    translationPending: 'Esta entrada está siendo cultivada — disponible pronto.',
+    onlyInSpanish: '',
+    // song egg
+    songTitle: 'partitura emergente',
+    songTeaser: '⌖ partitura emergente',
+    songExplainIdle: 'Cuando pulses <em>play</em>, esta página generará una canción solo para ti — siguiendo el <em>Game of Life</em> de Conway o las reglas de Wolfram, sorteado al azar. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.',
+    songExplainConway: 'Esta canción se está generando ahora mismo solo para ti, siguiendo las reglas del <em>Game of Life</em> de Conway. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.',
+    songExplainWolfram: 'Esta canción se está generando ahora mismo solo para ti, siguiendo la <em>regla&nbsp;%RULE%</em> de Wolfram. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.',
+    songPlay: '⏵ play',
+    songPause: '⏸ pausa',
+    songDownload: '↓ descargar .mid',
+    songNotes: 'notas',
+    miniLabel: 'expandir',
+    closeAria: 'cerrar',
+    minimizeAria: 'minimizar',
+    pauseAria: 'pausa',
+  },
+  en: {
+    backToSky: '← <em>back to garden</em>',
+    readFull: 'read full →',
+    panelClose: '✕',
+    relations: '[ relations ]',
+    noRelations: 'no relations declared',
+    stateSeedling: 'SEEDLING',
+    stateBudding: 'BUDDING',
+    stateEvergreen: 'EVERGREEN',
+    stateFeatured: '★ featured',
+    runningHead: 'field notebook',
+    pageWord: 'p.',
+    abstractHead: 'Abstract',
+    keywordsLabel: 'Keywords:',
+    sectionFraming: 'Framing',
+    sectionNext: 'Future cultivations',
+    sectionRelations: 'Relations (excerpt)',
+    sectionReferences: 'References',
+    draftLabel: 'draft',
+    translationPending: 'This entry is being cultivated — available soon.',
+    onlyInSpanish: 'Currently available only in Spanish · translation pending.',
+    songTitle: 'emerging score',
+    songTeaser: '⌖ emerging score',
+    songExplainIdle: 'When you press <em>play</em>, this page will generate a song just for you — following Conway\'s <em>Game of Life</em> or Wolfram\'s rules, picked at random. You won\'t hear it the same way ever again. Download it as <code>.mid</code> if you want to keep it.',
+    songExplainConway: 'This song is being generated right now just for you, following the rules of Conway\'s <em>Game of Life</em>. You won\'t hear it the same way ever again. Download it as <code>.mid</code> if you want to keep it.',
+    songExplainWolfram: 'This song is being generated right now just for you, following Wolfram\'s <em>rule&nbsp;%RULE%</em>. You won\'t hear it the same way ever again. Download it as <code>.mid</code> if you want to keep it.',
+    songPlay: '⏵ play',
+    songPause: '⏸ pause',
+    songDownload: '↓ download .mid',
+    songNotes: 'notes',
+    miniLabel: 'expand',
+    closeAria: 'close',
+    minimizeAria: 'minimize',
+    pauseAria: 'pause',
+  }
+};
+
+let currentLang = 'es';
+
+function pickInitialLang() {
+  const saved = localStorage.getItem('archalifeLang');
+  if (saved === 'es' || saved === 'en') return saved;
+  // detección automática · si el navegador empieza por "es" → ES, si no → EN
+  const nav = (navigator.language || '').toLowerCase();
+  return nav.startsWith('es') ? 'es' : 'en';
+}
+
+function applyI18n(lang) {
+  if (!STRINGS[lang]) return;
+  currentLang = lang;
+  const dict = STRINGS[lang];
+  document.documentElement.lang = lang;
+  // actualizar todos los elementos marcados con data-i18n="key" (innerHTML)
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (dict[key] !== undefined) el.innerHTML = dict[key];
+  });
+  // y los marcados con data-i18n-aria="key" (aria-label, para a11y)
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const key = el.dataset.i18nAria;
+    if (dict[key] !== undefined) el.setAttribute('aria-label', dict[key]);
+  });
+  // actualizar el estado activo de los botones del toggle
+  document.querySelectorAll('.lang-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  localStorage.setItem('archalifeLang', lang);
+  // notificar a partes dinámicas (renderEntry, song-egg) para que se re-rendericen
+  window.dispatchEvent(new CustomEvent('archalife:lang', { detail: { lang } }));
+}
+
+// helper · devuelve el string en el idioma activo
+function t(key) { return (STRINGS[currentLang] || STRINGS.es)[key] || ''; }
+
+// helper · devuelve el campo bilingüe de un nodo (body, title, subtitle…)
+// con fallback al ES si la versión EN no existe.
+function nodeField(n, base) {
+  const enKey = base + '_en';
+  const esKey = base + '_es';
+  if (currentLang === 'en' && n[enKey]) return n[enKey];
+  if (currentLang === 'en' && !n[enKey] && n[esKey]) return n[esKey];
+  if (n[esKey]) return n[esKey];
+  return n[base] || '';  // fallback compatibilidad si solo existe el campo plano (body, title, etc.)
+}
+
+// helper · indica si para este nodo solo hay versión ES (mostrar banner en EN)
+function nodeMissingTranslation(n, base) {
+  return currentLang === 'en' && !n[base + '_en'];
+}
+
+// cablear los botones del toggle
+document.querySelectorAll('.lang-toggle button').forEach(b => {
+  b.addEventListener('click', () => applyI18n(b.dataset.lang));
+});
+
+// re-render de partes dinámicas cuando cambia el idioma (panel y cuaderno
+// se generan en JS, así que data-i18n no los alcanza · necesitan re-build)
+window.addEventListener('archalife:lang', () => {
+  const hashId = location.hash.slice(1);
+  const node = hashId && nodeIdx[hashId] !== undefined ? NODES[nodeIdx[hashId]] : null;
+  if (node && document.getElementById('panel').classList.contains('open')) {
+    openPanel(node);
+  }
+  if (node && viewMode === 'entry') {
+    renderEntry(node);
+  }
+  if (typeof updateSongExplain === 'function') updateSongExplain();
+  if (typeof refreshSongUI === 'function') refreshSongUI();
+});
+
+// aplicar el idioma inicial al cargar
+applyI18n(pickInitialLang());
 
 /* Si la URL trae un #node-id, abrir ese nodo nada más cargar. */
 syncPanelFromHash();
@@ -3026,7 +3271,7 @@ function updateSongMeter() {
   const meter = songEgg.querySelector('.song-egg__meter');
   const miniTime = songEgg.querySelector('.song-egg__mini-time');
   const elapsed = songRunning ? (performance.now() / 1000 - songSessionStart) : 0;
-  if (meter) meter.textContent = `${formatTime(elapsed)} · ${songNotes.length} notas`;
+  if (meter) meter.textContent = `${formatTime(elapsed)} · ${songNotes.length} ${t('songNotes')}`;
   if (miniTime) miniTime.textContent = formatTime(elapsed);
 }
 
@@ -3181,10 +3426,16 @@ function songTick() {
 function updateSongExplain() {
   const explain = songEgg && songEgg.querySelector('.song-egg__explain');
   if (!explain) return;
+  // Si la música no está corriendo, mostrar el texto idle (gestionado por
+  // data-i18n="songExplainIdle"). Sólo sobrescribimos cuando hay sesión activa.
+  if (!songRunning && songNotes.length === 0) {
+    explain.innerHTML = t('songExplainIdle');
+    return;
+  }
   if (songEngine === 'conway') {
-    explain.innerHTML = `Esta canción se está generando ahora mismo solo para ti, siguiendo las reglas del <em>Game of Life</em> de Conway. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.`;
+    explain.innerHTML = t('songExplainConway');
   } else {
-    explain.innerHTML = `Esta canción se está generando ahora mismo solo para ti, siguiendo la <em>regla&nbsp;${wolfRule}</em> de Wolfram. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.`;
+    explain.innerHTML = t('songExplainWolfram').replace('%RULE%', wolfRule);
   }
 }
 
@@ -3286,7 +3537,7 @@ function refreshSongUI() {
   const playBtn = songEgg.querySelector('.song-egg__play');
   const dlBtn = songEgg.querySelector('.song-egg__download');
   const miniPause = songEgg.querySelector('.song-egg__mini-pause');
-  if (playBtn) playBtn.textContent = songRunning ? '⏸ pausa' : '⏵ play';
+  if (playBtn) playBtn.textContent = songRunning ? t('songPause') : t('songPlay');
   if (miniPause) miniPause.textContent = songRunning ? '⏸' : '⏵';
   if (dlBtn) dlBtn.disabled = songNotes.length === 0;
   updateSongMeter();
@@ -3383,26 +3634,26 @@ if (songEgg) {
 
 <!-- partitura emergente · easter-egg en el cuaderno -->
 <div class="song-egg" id="song-egg">
-  <div class="song-egg__teaser"><span class="glyph">⌖</span>partitura emergente</div>
+  <div class="song-egg__teaser" data-i18n="songTeaser"><span class="glyph">⌖</span>partitura emergente</div>
   <div class="song-egg__panel" role="dialog" aria-label="partitura emergente">
-    <button class="song-egg__minimize" aria-label="minimizar">—</button>
-    <button class="song-egg__close" aria-label="cerrar">×</button>
-    <div class="song-egg__title"><span class="glyph">⌖</span>partitura emergente</div>
-    <p class="song-egg__explain">Cuando pulses <em>play</em>, esta página generará una canción solo para ti — siguiendo el <em>Game of Life</em> de Conway o las reglas de Wolfram, sorteado al azar. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.</p>
+    <button class="song-egg__minimize" data-i18n-aria="minimizeAria" aria-label="minimizar">—</button>
+    <button class="song-egg__close" data-i18n-aria="closeAria" aria-label="cerrar">×</button>
+    <div class="song-egg__title"><span class="glyph">⌖</span><span data-i18n="songTitle">partitura emergente</span></div>
+    <p class="song-egg__explain" data-i18n="songExplainIdle">Cuando pulses <em>play</em>, esta página generará una canción solo para ti — siguiendo el <em>Game of Life</em> de Conway o las reglas de Wolfram, sorteado al azar. No la oirás igual nunca más. Descárgala como <code>.mid</code> si quieres conservarla.</p>
     <canvas class="song-egg__viz" aria-hidden="true"></canvas>
     <div class="song-egg__controls">
       <button class="song-egg__btn song-egg__play">⏵ play</button>
       <span class="song-egg__meter">00:00 · 0 notas</span>
     </div>
-    <button class="song-egg__btn song-egg__download" disabled>↓ descargar .mid</button>
+    <button class="song-egg__btn song-egg__download" disabled data-i18n="songDownload">↓ descargar .mid</button>
   </div>
   <div class="song-egg__mini">
-    <div class="song-egg__mini-clickable" role="button" tabindex="0" aria-label="expandir">
+    <div class="song-egg__mini-clickable" role="button" tabindex="0" data-i18n-aria="miniLabel" aria-label="expandir">
       <canvas class="song-egg__viz-mini" aria-hidden="true"></canvas>
       <span class="song-egg__mini-time">00:00</span>
     </div>
-    <button class="song-egg__mini-btn song-egg__mini-pause" aria-label="pausa">⏸</button>
-    <button class="song-egg__mini-btn song-egg__mini-close" aria-label="cerrar">×</button>
+    <button class="song-egg__mini-btn song-egg__mini-pause" data-i18n-aria="pauseAria" aria-label="pausa">⏸</button>
+    <button class="song-egg__mini-btn song-egg__mini-close" data-i18n-aria="closeAria" aria-label="cerrar">×</button>
   </div>
 </div>
 
