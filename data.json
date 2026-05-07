@@ -21,7 +21,6 @@
     {
       "id": "dbm",
       "type": "entry",
-      "draft": true,
       "label_es": "Modelo de Amplitud de la Dieta",
       "label_en": "Diet Breadth Model",
       "title_es": "El Modelo de Amplitud de la Dieta",
