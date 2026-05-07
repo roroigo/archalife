@@ -448,6 +448,43 @@ button { font-family: inherit; }
   padding: 0;
 }
 
+/* Botones "editar en GitHub" al pie del cuaderno · permiten al autor
+   corregir typos / fraseo sin tocar el repo local · cada click abre
+   GitHub web editor en data.json donde puede buscar la entrada
+   por id y editar los campos body_es / body_en. El botón secundario
+   abre github.dev (VS Code en navegador) para ediciones largas. */
+.paper-edit-actions {
+  margin: 3em 0 1em;
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+.paper-edit-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+  text-decoration: none;
+  border: 1px solid var(--paper-rule);
+  padding: 8px 16px;
+  border-radius: 0;
+  background: transparent;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+.paper-edit-link:hover {
+  color: var(--ochre);
+  border-color: var(--ochre-deep);
+  background: rgba(224, 149, 88, 0.06);
+}
+.paper-edit-link--secondary {
+  color: var(--paper-faint);
+  border-color: var(--paper-faint);
+}
+
 /* Banner cuando una entrada solo está disponible en español
    y el visitante está en modo EN. Tipografía mono pequeña, ocre tenue. */
 .read-translation-pending,
@@ -3075,7 +3112,7 @@ print(f'primary hub: {hub} · BC={bc[hub]:.4f}')
             </div>`;
           }).join('')}
 
-          <div class="paper-references">
+          ${hasCustomBody ? '' : `<div class="paper-references">
             <h2>${t('sectionReferences')}</h2>
             <ol>
               <li>Epstein, J. M. (2006). <em>Generative Social Science: Studies in Agent-Based Computational Modeling</em>. Princeton University Press.</li>
@@ -3085,6 +3122,11 @@ print(f'primary hub: {hub} · BC={bc[hub]:.4f}')
               <li>Schelling, T. C. (1971). Dynamic models of segregation. <em>The Journal of Mathematical Sociology</em>, 1(2), 143–186.</li>
               <li>Frugone, M., <em>et al.</em> (en preparación). Transecto cordillerano de obsidiana, Norpatagonia. <em>BD_Consolidada</em>, registro interno.</li>
             </ol>
+          </div>`}
+
+          <div class="paper-edit-actions" aria-label="edit options">
+            <a class="paper-edit-link" href="https://github.com/archalife/archalife/edit/main/data.json" target="_blank" rel="noopener" title="${t('editTooltip').replace('\"', '&quot;')}">${t('editEntry')}</a>
+            <a class="paper-edit-link paper-edit-link--secondary" href="https://github.dev/archalife/archalife/blob/main/data.json" target="_blank" rel="noopener" title="VS Code en el navegador">${t('editAdvanced')}</a>
           </div>
 
         </div>
@@ -3344,6 +3386,9 @@ const STRINGS = {
     panelClose: '✕',
     relations: '[ relaciones ]',
     noRelations: 'sin relaciones declaradas',
+    editEntry: '✎ editar esta entrada en GitHub',
+    editAdvanced: '⌖ editor avanzado (VS Code)',
+    editTooltip: 'Abre data.json en GitHub. Busca el id de la entrada (Cmd+F) y edita los campos body_es / body_en.',
     // pill states
     stateSeedling: 'SEMILLA',
     stateBudding: 'EN CULTIVO',
@@ -3382,6 +3427,9 @@ const STRINGS = {
     panelClose: '✕',
     relations: '[ relations ]',
     noRelations: 'no relations declared',
+    editEntry: '✎ edit this entry on GitHub',
+    editAdvanced: '⌖ advanced editor (VS Code)',
+    editTooltip: 'Opens data.json on GitHub. Search the entry id (Cmd+F) and edit body_es / body_en.',
     stateSeedling: 'SEEDLING',
     stateBudding: 'BUDDING',
     stateEvergreen: 'EVERGREEN',
