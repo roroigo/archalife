@@ -2929,10 +2929,37 @@ function renderEntry(n) {
   const rawSubtitle = nodeField(n, 'subtitle');
   const subtitleHTML = rawSubtitle || ((nodeField(n, 'body') || '').split('.').slice(0,1).join('.') + '.');
   // body bilingüe + banner si solo hay versión ES en EN-mode
-  const bodyText = nodeField(n, 'body');
+  let bodyText = nodeField(n, 'body');
   const translationBanner = nodeMissingTranslation(n, 'body')
     ? `<div class="paper-translation-pending">${t('onlyInSpanish')}</div>`
     : '';
+
+  // Pre-construir bloques HTML de cada simulation. Cada uno puede insertarse
+  // INLINE en el body (donde el autor pone <!--SIM:N--> · permite figuras
+  // interactivas en el medio del paper) o, si no hay placeholder, al final.
+  const simBlocks = (n.simulations || []).map((sim, i) => {
+    const sTitle = nodeFieldFromObj(sim, 'title') || 'Simulación';
+    const sIntro = nodeFieldFromObj(sim, 'intro') || '';
+    const fullSrc = sim.src.startsWith('http') ? sim.src : `${location.origin}${location.pathname.replace(/[^\/]*$/, '')}${sim.src}`;
+    return `<div class="paper-simulation" data-sim-src="${fullSrc}" data-sim-height="${sim.height || 700}">
+              <h2 class="paper-simulation-head"><span class="num">⌖</span>${sTitle}</h2>
+              ${sIntro ? `<p>${sIntro}</p>` : ''}
+              <div class="paper-simulation-frame">
+                <button class="paper-simulation-load" type="button">▶ ${currentLang === 'en' ? 'Load interactive figure' : 'Cargar figura interactiva'}</button>
+              </div>
+              <div class="paper-simulation-source">${currentLang === 'en' ? 'Source' : 'Fuente'}: <code>${sim.src.split('/').pop()}</code></div>
+            </div>`;
+  });
+  // Inyectar simulations donde el body tiene <!--SIM:N--> · marcar como consumidas.
+  const inlineSimsConsumed = new Set();
+  simBlocks.forEach((block, i) => {
+    const marker = `<!--SIM:${i}-->`;
+    if (bodyText && bodyText.includes(marker)) {
+      bodyText = bodyText.split(marker).join(block);
+      inlineSimsConsumed.add(i);
+    }
+  });
+  const trailingSimsHTML = simBlocks.filter((_, i) => !inlineSimsConsumed.has(i)).join('\n');
   // autores y afiliaciones · vienen del JSON si están declarados.
   // Fallback al equipo por defecto del laboratorio.
   const authorsArr = n.authors || [
@@ -3103,20 +3130,7 @@ print(f'primary hub: {hub} · BC={bc[hub]:.4f}')
             </ol>
           </div>`}
 
-          ${(n.simulations || []).map((sim, i) => {
-            const sTitle = nodeFieldFromObj(sim, 'title') || 'Simulación';
-            const sIntro = nodeFieldFromObj(sim, 'intro') || '';
-            const fullSrc = sim.src.startsWith('http') ? sim.src : `${location.origin}${location.pathname.replace(/[^\/]*$/, '')}${sim.src}`;
-            return `
-            <div class="paper-simulation" data-sim-src="${fullSrc}" data-sim-height="${sim.height || 700}">
-              <h2 class="paper-simulation-head"><span class="num">⌖</span>${sTitle}</h2>
-              ${sIntro ? `<p>${sIntro}</p>` : ''}
-              <div class="paper-simulation-frame">
-                <button class="paper-simulation-load" type="button">▶ ${currentLang === 'en' ? 'Load NetLogo simulation' : 'Cargar simulación NetLogo'}</button>
-              </div>
-              <div class="paper-simulation-source">${currentLang === 'en' ? 'Source' : 'Fuente'}: <code>${sim.src.split('/').pop()}</code></div>
-            </div>`;
-          }).join('')}
+          ${trailingSimsHTML}
 
           ${hasCustomBody ? '' : `<div class="paper-references">
             <h2>${t('sectionReferences')}</h2>
@@ -3219,7 +3233,9 @@ async function postRenderAcademic(rootEl, node) {
       libs.Prism.highlightElement(el);
     });
   }
-  // 4. simulaciones NetLogo Web · adjuntar handler al botón "cargar"
+  // 4. simulaciones · soporta dos tipos de embed según extensión del src:
+  //    · .nlogo  → iframe a netlogoweb.org/launch#URL (legacy NetLogo Web)
+  //    · .html   → iframe directo a nuestro propio widget (D3, p5, etc.)
   rootEl.querySelectorAll('.paper-simulation').forEach(simEl => {
     const btn = simEl.querySelector('.paper-simulation-load');
     if (!btn) return;
@@ -3228,8 +3244,12 @@ async function postRenderAcademic(rootEl, node) {
       const height = parseInt(simEl.dataset.simHeight || '700', 10);
       if (!src) return;
       const frame = simEl.querySelector('.paper-simulation-frame');
-      // cargar iframe a netlogoweb.org/launch#URL
-      frame.innerHTML = `<iframe src="https://netlogoweb.org/launch#${src}" width="100%" height="${height}" frameborder="0" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen" title="NetLogo Web simulation"></iframe>`;
+      const isHtml = /\.html?($|[?#])/.test(src);
+      const iframeSrc = isHtml ? src : `https://netlogoweb.org/launch#${src}`;
+      const title = isHtml
+        ? (currentLang === 'en' ? 'Interactive widget' : 'Widget interactivo')
+        : 'NetLogo Web simulation';
+      frame.innerHTML = `<iframe src="${iframeSrc}" width="100%" height="${height}" frameborder="0" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen" title="${title}"></iframe>`;
     }, { once: true });
   });
 }

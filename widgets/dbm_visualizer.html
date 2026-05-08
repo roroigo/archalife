@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>DBM — Figura 1.1 interactiva</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  /* ==========================================================
+     Minimal arXiv-style — uses serif fonts and neutral colors.
+     Inherits from parent page when embedded; this fallback CSS
+     keeps the widget usable as a standalone preview.
+     ========================================================== */
+  :root {
+    --bg: #fefefe;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --accent: #2a4d69;
+    --border: #d0d0d0;
+    --search: #c0392b;
+    --handling: #2c3e50;
+    --foraging: #27ae60;
+    --highlight: #f4d03f;
+  }
+  body { margin: 0; padding: 0; }
+  .dbm-widget {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--fg);
+    background: var(--bg);
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .dbm-widget h3 {
+    margin: 0 0 8px 0;
+    font-weight: normal;
+    font-size: 1.05em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  .dbm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 16px;
+  }
+  @media (max-width: 720px) {
+    .dbm-grid { grid-template-columns: 1fr; }
+  }
+  .dbm-controls .slider-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 60px;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0;
+    font-size: 0.92em;
+  }
+  .dbm-controls input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .dbm-controls .slider-label { color: var(--muted); }
+  .dbm-controls .slider-value {
+    text-align: right;
+    font-family: 'Cambria Math', Georgia, serif;
+    font-style: italic;
+    color: var(--accent);
+  }
+  .dbm-readout {
+    background: #fafafa;
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    margin-top: 12px;
+    border-radius: 3px;
+    font-size: 0.92em;
+    line-height: 1.55;
+  }
+  .dbm-readout .diet-row {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .dbm-readout .prey-chip {
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.88em;
+  }
+  .dbm-readout .in-diet {
+    background: #e8f5e9;
+    border-color: #66bb6a;
+    color: #1b5e20;
+  }
+  .dbm-readout .out-diet {
+    background: #fafafa;
+    color: #999;
+    text-decoration: line-through;
+  }
+  .dbm-plot { width: 100%; }
+  .axis text { font-size: 11px; fill: var(--muted); font-family: Georgia, serif; }
+  .axis line, .axis path { stroke: var(--muted); }
+  .grid line { stroke: #eee; stroke-dasharray: 2,2; }
+  .legend text { font-size: 11px; font-family: Georgia, serif; }
+  .curve-search { stroke: var(--search); stroke-width: 2; fill: none; }
+  .curve-handling { stroke: var(--handling); stroke-width: 2; fill: none; }
+  .curve-foraging { stroke: var(--foraging); stroke-width: 2.5; fill: none; }
+  .marker-search { fill: var(--search); }
+  .marker-handling { fill: var(--handling); }
+  .marker-foraging { fill: var(--foraging); }
+  .optimum-circle {
+    fill: var(--highlight);
+    stroke: #c69214;
+    stroke-width: 2;
+  }
+  .optimum-label {
+    font-size: 11px;
+    font-weight: bold;
+    fill: #8a6500;
+    font-family: Georgia, serif;
+  }
+  .exercises {
+    margin-top: 20px;
+    padding: 14px 18px;
+    background: #fcfaf3;
+    border-left: 3px solid var(--highlight);
+    font-size: 0.92em;
+    line-height: 1.6;
+  }
+  .exercises h4 {
+    margin: 0 0 8px 0;
+    font-weight: normal;
+    color: var(--accent);
+    font-size: 1em;
+  }
+  .exercises ol { margin: 4px 0 0 18px; padding: 0; }
+  .exercises li { margin: 6px 0; }
+  .reset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    font-family: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+  .reset-btn:hover { background: #f0f0f0; }
+</style>
+</head>
+<body>
+
+<div class="dbm-widget">
+
+  <h3>Figura 1.1 — el modelo en vivo</h3>
+  <p style="font-size:0.92em; color:var(--muted); margin:6px 0 0 0; line-height:1.5;">
+    Mueve los <em>sliders</em> de abundancia (λ) y observa cómo se redibujan las tres curvas.
+    El punto amarillo marca la <strong>amplitud óptima de la dieta</strong>: el lugar donde
+    el tiempo total de forrajeo (búsqueda + manejo) es mínimo.
+  </p>
+
+  <div class="dbm-grid">
+
+    <!-- LEFT: controls + readout -->
+    <div class="dbm-controls">
+      <div class="slider-row">
+        <span class="slider-label">λ Guanaco</span>
+        <input id="l1" type="range" min="0.001" max="0.1" step="0.001" value="0.05">
+        <span class="slider-value" id="v1">0.050</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">λ Huemul</span>
+        <input id="l2" type="range" min="0.001" max="0.15" step="0.001" value="0.08">
+        <span class="slider-value" id="v2">0.080</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">λ Vizcacha</span>
+        <input id="l3" type="range" min="0.01" max="2" step="0.01" value="0.50">
+        <span class="slider-value" id="v3">0.50</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">λ Coypu</span>
+        <input id="l4" type="range" min="0.01" max="2" step="0.01" value="0.40">
+        <span class="slider-value" id="v4">0.40</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">λ Lagartija</span>
+        <input id="l5" type="range" min="0.05" max="5" step="0.05" value="2.00">
+        <span class="slider-value" id="v5">2.00</span>
+      </div>
+
+      <button class="reset-btn" id="reset">Volver a los valores iniciales</button>
+
+      <div class="dbm-readout" id="readout">
+        <strong>Dieta óptima:</strong> <span id="diet-summary"></span>
+        <div class="diet-row" id="diet-chips"></div>
+        <div style="margin-top:8px;">
+          <strong>Tasa de retorno R(D):</strong> <span id="return-rate"></span> kcal/hora<br>
+          <strong>Amplitud de la dieta:</strong> <span id="breadth"></span> tipos de presa
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: the chart -->
+    <div>
+      <svg class="dbm-plot" id="plot" viewBox="0 0 480 360"
+           preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+  </div>
+
+  <div class="exercises">
+    <h4>Ejercicios para mover el jardín</h4>
+    <ol>
+      <li>Lleva λ del Guanaco al mínimo (0.001) sin tocar el resto. ¿Qué presas entran a la dieta ahora? ¿Por qué?</li>
+      <li>Vuelve todo a los valores iniciales. Ahora lleva λ de la Lagartija al máximo (5.00). ¿Entra a la dieta? ¿Qué dice esto sobre la "abundancia propia" de una presa de bajo rango?</li>
+      <li>Encuentra una combinación donde el Coypu entre a la dieta pero la Lagartija siga afuera. ¿Cuál es la lógica?</li>
+      <li>¿Puedes lograr que la dieta óptima tenga los 5 tipos de presa? ¿Bajo qué condiciones?</li>
+    </ol>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// Diet Breadth Model — interactive Figure 1.1
+// Implements the analytical DBM (Charnov 1976; Bettinger 2009)
+// ============================================================
+
+const PREY = [
+  { name: 'Guanaco',   kcal: 50000, h: 8.0 },
+  { name: 'Huemul',    kcal: 30000, h: 6.0 },
+  { name: 'Vizcacha',  kcal:  3000, h: 1.0 },
+  { name: 'Coypu',     kcal:  2500, h: 1.2 },
+  { name: 'Lagartija', kcal:   200, h: 0.3 }
+].map(p => ({ ...p, rank: p.kcal / p.h }));
+// Already in rank order (descending); index 0 = top rank.
+
+// --- Core DBM functions ---
+
+// Average return rate R(D) for a given diet D and encounter rates
+function R(diet, lambdas) {
+  if (diet.length === 0) return 0;
+  let num = 0, den = 1;
+  diet.forEach(p => {
+    const l = lambdas[p.name];
+    num += l * p.kcal;
+    den += l * p.h;
+  });
+  return num / den;
+}
+
+// Optimal diet by greedy inclusion in rank order
+function optimalDiet(lambdas) {
+  const diet = [];
+  for (const prey of PREY) {
+    if (diet.length === 0) { diet.push(prey); continue; }
+    if (prey.rank > R(diet, lambdas)) diet.push(prey);
+    else break;
+  }
+  return diet;
+}
+
+// For Figure 1.1 we need search time, handling time, and foraging time
+// as functions of "diet breadth" (an integer 1..5 = how many top-ranked
+// prey types are accepted).
+//
+// Time per kcal interpretation, in arbitrary units:
+// - search time per kcal:    1 / sum(lambdas in diet * kcal)
+// - handling time per kcal:  sum(lambdas * h * kcal) / sum(lambdas * kcal)
+//   (weighted by encounter * energy share)
+// - foraging time per kcal:  search + handling
+function curvesForBreadth(lambdas) {
+  const points = [];
+  for (let k = 1; k <= PREY.length; k++) {
+    const D = PREY.slice(0, k);
+    const sumLE = D.reduce((s, p) => s + lambdas[p.name] * p.kcal, 0);
+    const sumLH = D.reduce((s, p) => s + lambdas[p.name] * p.h, 0);
+    const search   = 1 / sumLE;       // search time per kcal
+    const handling = sumLH / sumLE;   // handling time per kcal
+    const foraging = (1 + sumLH) / sumLE; // = search + handling (since denom of R is 1+sumLH)
+    points.push({ k, search, handling, foraging });
+  }
+  return points;
+}
+
+// ============================================================
+// D3 chart setup
+// ============================================================
+
+const svg = d3.select('#plot');
+const margin = { top: 24, right: 16, bottom: 56, left: 56 };
+const width = 480 - margin.left - margin.right;
+const height = 360 - margin.top - margin.bottom;
+const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+const xScale = d3.scalePoint().domain([1,2,3,4,5]).range([0, width]).padding(0.5);
+const yScale = d3.scaleLog().range([height, 0]);
+
+// Axes
+const xAxis = g.append('g').attr('class','axis').attr('transform', `translate(0,${height})`);
+const yAxis = g.append('g').attr('class','axis');
+const xLabels = ['1', '1&2', '1,2&3', '1,2,3&4', '1,2,3,4&5'];
+
+// Axis labels
+g.append('text')
+  .attr('text-anchor','middle')
+  .attr('x', width/2)
+  .attr('y', height + 36)
+  .style('font-size','11px')
+  .style('fill', 'var(--muted)')
+  .text('Amplitud de la dieta (presas incluidas, en orden de rango)');
+
+g.append('text')
+  .attr('text-anchor','middle')
+  .attr('transform', `rotate(-90)`)
+  .attr('x', -height/2)
+  .attr('y', -42)
+  .style('font-size','11px')
+  .style('fill', 'var(--muted)')
+  .text('Tiempo por kcal (escala log, unidades arbitrarias)');
+
+// "narrow ── wide" bottom labels
+g.append('text')
+  .attr('x', 0).attr('y', height + 52)
+  .style('font-size','10px').style('font-style','italic')
+  .style('fill', 'var(--muted)').text('estrecha');
+g.append('text')
+  .attr('x', width).attr('y', height + 52)
+  .attr('text-anchor','end')
+  .style('font-size','10px').style('font-style','italic')
+  .style('fill', 'var(--muted)').text('amplia');
+
+// Curves and markers (re-rendered on update)
+const lineGen = (key) => d3.line()
+  .x(d => xScale(d.k))
+  .y(d => yScale(d[key]))
+  .curve(d3.curveMonotoneX);
+
+const pathSearch    = g.append('path').attr('class', 'curve-search');
+const pathHandling  = g.append('path').attr('class', 'curve-handling');
+const pathForaging  = g.append('path').attr('class', 'curve-foraging');
+
+// Markers groups
+const groupSearch    = g.append('g');
+const groupHandling  = g.append('g');
+const groupForaging  = g.append('g');
+
+// Optimum highlight
+const optimumGroup = g.append('g');
+
+// Legend (top-right)
+const legend = g.append('g').attr('class','legend')
+  .attr('transform', `translate(${width-10}, 6)`);
+const legendItems = [
+  { label: 'tiempo de búsqueda', color: 'var(--search)' },
+  { label: 'tiempo de manejo',   color: 'var(--handling)' },
+  { label: 'tiempo de forrajeo (total)', color: 'var(--foraging)' }
+];
+legendItems.forEach((it, i) => {
+  const row = legend.append('g').attr('transform', `translate(0, ${i*16})`);
+  row.append('line').attr('x1', -100).attr('x2', -86)
+    .attr('y1', 0).attr('y2', 0)
+    .attr('stroke', it.color).attr('stroke-width', 2);
+  row.append('text').attr('x', -82).attr('y', 4)
+    .attr('text-anchor', 'start')
+    .style('fill', 'var(--fg)')
+    .text(it.label);
+});
+
+// ============================================================
+// Update function
+// ============================================================
+
+function getLambdas() {
+  return {
+    'Guanaco':   parseFloat(document.getElementById('l1').value),
+    'Huemul':    parseFloat(document.getElementById('l2').value),
+    'Vizcacha':  parseFloat(document.getElementById('l3').value),
+    'Coypu':     parseFloat(document.getElementById('l4').value),
+    'Lagartija': parseFloat(document.getElementById('l5').value)
+  };
+}
+
+function update() {
+  const lambdas = getLambdas();
+
+  // Update slider value displays
+  document.getElementById('v1').textContent = lambdas['Guanaco'].toFixed(3);
+  document.getElementById('v2').textContent = lambdas['Huemul'].toFixed(3);
+  document.getElementById('v3').textContent = lambdas['Vizcacha'].toFixed(2);
+  document.getElementById('v4').textContent = lambdas['Coypu'].toFixed(2);
+  document.getElementById('v5').textContent = lambdas['Lagartija'].toFixed(2);
+
+  // Compute curves
+  const data = curvesForBreadth(lambdas);
+
+  // Recompute y scale based on current data
+  const allValues = data.flatMap(d => [d.search, d.handling, d.foraging]);
+  const yMin = d3.min(allValues) * 0.7;
+  const yMax = d3.max(allValues) * 1.4;
+  yScale.domain([Math.max(yMin, 1e-8), yMax]);
+
+  // Render axes
+  xAxis.transition().duration(200).call(
+    d3.axisBottom(xScale).tickFormat((d,i) => xLabels[i])
+  );
+  yAxis.transition().duration(200).call(
+    d3.axisLeft(yScale).ticks(5, '.1g')
+  );
+
+  // Render curves
+  pathSearch.datum(data).transition().duration(200).attr('d', lineGen('search'));
+  pathHandling.datum(data).transition().duration(200).attr('d', lineGen('handling'));
+  pathForaging.datum(data).transition().duration(200).attr('d', lineGen('foraging'));
+
+  // Markers
+  const renderMarkers = (group, key, cls) => {
+    const sel = group.selectAll('circle').data(data);
+    sel.enter().append('circle')
+      .attr('class', cls)
+      .attr('r', 3.5)
+      .merge(sel)
+      .transition().duration(200)
+      .attr('cx', d => xScale(d.k))
+      .attr('cy', d => yScale(d[key]));
+    sel.exit().remove();
+  };
+  renderMarkers(groupSearch,   'search',   'marker-search');
+  renderMarkers(groupHandling, 'handling', 'marker-handling');
+  renderMarkers(groupForaging, 'foraging', 'marker-foraging');
+
+  // Find optimum (minimum of foraging time)
+  const opt = data.reduce((best, d) => d.foraging < best.foraging ? d : best, data[0]);
+
+  // Highlight optimum
+  optimumGroup.selectAll('*').remove();
+  optimumGroup.append('circle')
+    .attr('class','optimum-circle')
+    .attr('cx', xScale(opt.k))
+    .attr('cy', yScale(opt.foraging))
+    .attr('r', 8);
+  optimumGroup.append('text')
+    .attr('class','optimum-label')
+    .attr('x', xScale(opt.k))
+    .attr('y', yScale(opt.foraging) - 14)
+    .attr('text-anchor','middle')
+    .text('óptimo');
+
+  // Update readout
+  const diet = optimalDiet(lambdas);
+  const dietNames = diet.map(p => p.name);
+  const returnRate = R(diet, lambdas);
+
+  document.getElementById('diet-summary').textContent =
+    dietNames.length === 0 ? '—' : dietNames.join(', ');
+  document.getElementById('return-rate').textContent = returnRate.toFixed(0);
+  document.getElementById('breadth').textContent = dietNames.length;
+
+  // Diet chips
+  const chipsContainer = document.getElementById('diet-chips');
+  chipsContainer.innerHTML = '';
+  PREY.forEach(p => {
+    const chip = document.createElement('span');
+    chip.className = 'prey-chip ' + (dietNames.includes(p.name) ? 'in-diet' : 'out-diet');
+    chip.textContent = p.name;
+    chipsContainer.appendChild(chip);
+  });
+}
+
+// Wire up
+['l1','l2','l3','l4','l5'].forEach(id => {
+  document.getElementById(id).addEventListener('input', update);
+});
+
+// Reset button
+const defaults = { l1: 0.05, l2: 0.08, l3: 0.50, l4: 0.40, l5: 2.00 };
+document.getElementById('reset').addEventListener('click', () => {
+  Object.entries(defaults).forEach(([id, val]) => {
+    document.getElementById(id).value = val;
+  });
+  update();
+});
+
+// Initial render
+update();
+</script>
+
+</body>
+</html>
