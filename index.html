@@ -448,6 +448,31 @@ button { font-family: inherit; }
   padding: 0;
 }
 
+/* Figuras estáticas embebidas dentro del cuaderno · usadas en nodos
+   donde el autor construye un argumento visual paso a paso. La paleta
+   oscura del PNG se mezcla con el fondo del paper · captions en cursiva. */
+.paper-figure {
+  margin: 1.8em auto;
+  max-width: 720px;
+  text-align: center;
+}
+.paper-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 2px;
+}
+.paper-figure figcaption {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--paper-mute);
+  margin-top: 0.6em;
+  padding: 0 1em;
+}
+
 /* Botones "editar en GitHub" al pie del cuaderno · permiten al autor
    corregir typos / fraseo sin tocar el repo local · cada click abre
    GitHub web editor en data.json donde puede buscar la entrada

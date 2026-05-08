@@ -6,22 +6,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <style>
   /* ==========================================================
-     Minimal arXiv-style — uses serif fonts and neutral colors.
-     Inherits from parent page when embedded; this fallback CSS
-     keeps the widget usable as a standalone preview.
+     Dark palette aligned with archalife-project.org (#07090d)
      ========================================================== */
   :root {
-    --bg: #fefefe;
-    --fg: #1a1a1a;
-    --muted: #666;
-    --accent: #2a4d69;
-    --border: #d0d0d0;
-    --search: #c0392b;
-    --handling: #2c3e50;
-    --foraging: #27ae60;
-    --highlight: #f4d03f;
+    --bg: #07090d;
+    --panel: #0e1218;
+    --fg: #d9dde3;
+    --muted: #7d8590;
+    --accent: #e6c269;
+    --border: #1f2530;
+    --search: #e07a5f;
+    --handling: #9bb0c7;
+    --foraging: #7fb069;
+    --opt: #f4d35e;
+    --in-diet-bg: rgba(127, 176, 105, 0.15);
+    --in-diet-border: #7fb069;
+    --in-diet-fg: #b8d8a0;
   }
-  body { margin: 0; padding: 0; }
+  body { margin: 0; padding: 0; background: var(--bg); }
   .dbm-widget {
     font-family: Georgia, 'Times New Roman', serif;
     color: var(--fg);
@@ -36,6 +38,7 @@
     margin: 0 0 8px 0;
     font-weight: normal;
     font-size: 1.05em;
+    color: var(--fg);
     border-bottom: 1px solid var(--border);
     padding-bottom: 6px;
   }
@@ -68,7 +71,7 @@
     color: var(--accent);
   }
   .dbm-readout {
-    background: #fafafa;
+    background: var(--panel);
     border: 1px solid var(--border);
     padding: 10px 14px;
     margin-top: 12px;
@@ -87,46 +90,52 @@
     border: 1px solid var(--border);
     border-radius: 12px;
     font-size: 0.88em;
+    color: var(--muted);
   }
   .dbm-readout .in-diet {
-    background: #e8f5e9;
-    border-color: #66bb6a;
-    color: #1b5e20;
+    background: var(--in-diet-bg);
+    border-color: var(--in-diet-border);
+    color: var(--in-diet-fg);
   }
   .dbm-readout .out-diet {
-    background: #fafafa;
-    color: #999;
     text-decoration: line-through;
+    opacity: 0.5;
   }
   .dbm-plot { width: 100%; }
   .axis text { font-size: 11px; fill: var(--muted); font-family: Georgia, serif; }
   .axis line, .axis path { stroke: var(--muted); }
-  .grid line { stroke: #eee; stroke-dasharray: 2,2; }
-  .legend text { font-size: 11px; font-family: Georgia, serif; }
+  .grid line { stroke: var(--border); stroke-dasharray: 2,2; }
+  .legend text { font-size: 11px; font-family: Georgia, serif; fill: var(--fg); }
   .curve-search { stroke: var(--search); stroke-width: 2; fill: none; }
   .curve-handling { stroke: var(--handling); stroke-width: 2; fill: none; }
   .curve-foraging { stroke: var(--foraging); stroke-width: 2.5; fill: none; }
-  .marker-search { fill: var(--search); }
-  .marker-handling { fill: var(--handling); }
-  .marker-foraging { fill: var(--foraging); }
+  .marker-search { fill: var(--bg); stroke: var(--search); stroke-width: 1.5; }
+  .marker-handling { fill: var(--bg); stroke: var(--handling); stroke-width: 1.5; }
+  .marker-foraging { fill: var(--bg); stroke: var(--foraging); stroke-width: 1.5; }
   .optimum-circle {
-    fill: var(--highlight);
-    stroke: #c69214;
+    fill: var(--opt);
+    stroke: var(--bg);
     stroke-width: 2;
+  }
+  .optimum-inner {
+    fill: var(--bg);
+    stroke: var(--opt);
+    stroke-width: 2.5;
   }
   .optimum-label {
     font-size: 11px;
     font-weight: bold;
-    fill: #8a6500;
+    fill: var(--opt);
     font-family: Georgia, serif;
   }
   .exercises {
     margin-top: 20px;
     padding: 14px 18px;
-    background: #fcfaf3;
-    border-left: 3px solid var(--highlight);
+    background: var(--panel);
+    border-left: 3px solid var(--opt);
     font-size: 0.92em;
     line-height: 1.6;
+    color: var(--fg);
   }
   .exercises h4 {
     margin: 0 0 8px 0;
@@ -146,7 +155,13 @@
     color: var(--muted);
     margin-top: 8px;
   }
-  .reset-btn:hover { background: #f0f0f0; }
+  .reset-btn:hover { background: var(--panel); color: var(--fg); }
+  .intro-paragraph {
+    font-size: 0.92em;
+    color: var(--muted);
+    margin: 6px 0 0 0;
+    line-height: 1.5;
+  }
 </style>
 </head>
 <body>
@@ -154,9 +169,9 @@
 <div class="dbm-widget">
 
   <h3>Figura 1.1 — el modelo en vivo</h3>
-  <p style="font-size:0.92em; color:var(--muted); margin:6px 0 0 0; line-height:1.5;">
+  <p class="intro-paragraph">
     Mueve los <em>sliders</em> de abundancia (λ) y observa cómo se redibujan las tres curvas.
-    El punto amarillo marca la <strong>amplitud óptima de la dieta</strong>: el lugar donde
+    El punto dorado marca la <strong>amplitud óptima de la dieta</strong>: el lugar donde
     el tiempo total de forrajeo (búsqueda + manejo) es mínimo.
   </p>
 
@@ -235,11 +250,7 @@ const PREY = [
   { name: 'Coypu',     kcal:  2500, h: 1.2 },
   { name: 'Lagartija', kcal:   200, h: 0.3 }
 ].map(p => ({ ...p, rank: p.kcal / p.h }));
-// Already in rank order (descending); index 0 = top rank.
 
-// --- Core DBM functions ---
-
-// Average return rate R(D) for a given diet D and encounter rates
 function R(diet, lambdas) {
   if (diet.length === 0) return 0;
   let num = 0, den = 1;
@@ -251,7 +262,6 @@ function R(diet, lambdas) {
   return num / den;
 }
 
-// Optimal diet by greedy inclusion in rank order
 function optimalDiet(lambdas) {
   const diet = [];
   for (const prey of PREY) {
@@ -262,24 +272,15 @@ function optimalDiet(lambdas) {
   return diet;
 }
 
-// For Figure 1.1 we need search time, handling time, and foraging time
-// as functions of "diet breadth" (an integer 1..5 = how many top-ranked
-// prey types are accepted).
-//
-// Time per kcal interpretation, in arbitrary units:
-// - search time per kcal:    1 / sum(lambdas in diet * kcal)
-// - handling time per kcal:  sum(lambdas * h * kcal) / sum(lambdas * kcal)
-//   (weighted by encounter * energy share)
-// - foraging time per kcal:  search + handling
 function curvesForBreadth(lambdas) {
   const points = [];
   for (let k = 1; k <= PREY.length; k++) {
     const D = PREY.slice(0, k);
     const sumLE = D.reduce((s, p) => s + lambdas[p.name] * p.kcal, 0);
     const sumLH = D.reduce((s, p) => s + lambdas[p.name] * p.h, 0);
-    const search   = 1 / sumLE;       // search time per kcal
-    const handling = sumLH / sumLE;   // handling time per kcal
-    const foraging = (1 + sumLH) / sumLE; // = search + handling (since denom of R is 1+sumLH)
+    const search   = 1 / sumLE;
+    const handling = sumLH / sumLE;
+    const foraging = (1 + sumLH) / sumLE;
     points.push({ k, search, handling, foraging });
   }
   return points;
@@ -298,12 +299,10 @@ const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.t
 const xScale = d3.scalePoint().domain([1,2,3,4,5]).range([0, width]).padding(0.5);
 const yScale = d3.scaleLog().range([height, 0]);
 
-// Axes
 const xAxis = g.append('g').attr('class','axis').attr('transform', `translate(0,${height})`);
 const yAxis = g.append('g').attr('class','axis');
 const xLabels = ['1', '1&2', '1,2&3', '1,2,3&4', '1,2,3,4&5'];
 
-// Axis labels
 g.append('text')
   .attr('text-anchor','middle')
   .attr('x', width/2)
@@ -321,7 +320,6 @@ g.append('text')
   .style('fill', 'var(--muted)')
   .text('Tiempo por kcal (escala log, unidades arbitrarias)');
 
-// "narrow ── wide" bottom labels
 g.append('text')
   .attr('x', 0).attr('y', height + 52)
   .style('font-size','10px').style('font-style','italic')
@@ -332,7 +330,6 @@ g.append('text')
   .style('font-size','10px').style('font-style','italic')
   .style('fill', 'var(--muted)').text('amplia');
 
-// Curves and markers (re-rendered on update)
 const lineGen = (key) => d3.line()
   .x(d => xScale(d.k))
   .y(d => yScale(d[key]))
@@ -342,15 +339,12 @@ const pathSearch    = g.append('path').attr('class', 'curve-search');
 const pathHandling  = g.append('path').attr('class', 'curve-handling');
 const pathForaging  = g.append('path').attr('class', 'curve-foraging');
 
-// Markers groups
 const groupSearch    = g.append('g');
 const groupHandling  = g.append('g');
 const groupForaging  = g.append('g');
 
-// Optimum highlight
 const optimumGroup = g.append('g');
 
-// Legend (top-right)
 const legend = g.append('g').attr('class','legend')
   .attr('transform', `translate(${width-10}, 6)`);
 const legendItems = [
@@ -365,13 +359,8 @@ legendItems.forEach((it, i) => {
     .attr('stroke', it.color).attr('stroke-width', 2);
   row.append('text').attr('x', -82).attr('y', 4)
     .attr('text-anchor', 'start')
-    .style('fill', 'var(--fg)')
     .text(it.label);
 });
-
-// ============================================================
-// Update function
-// ============================================================
 
 function getLambdas() {
   return {
@@ -386,23 +375,19 @@ function getLambdas() {
 function update() {
   const lambdas = getLambdas();
 
-  // Update slider value displays
   document.getElementById('v1').textContent = lambdas['Guanaco'].toFixed(3);
   document.getElementById('v2').textContent = lambdas['Huemul'].toFixed(3);
   document.getElementById('v3').textContent = lambdas['Vizcacha'].toFixed(2);
   document.getElementById('v4').textContent = lambdas['Coypu'].toFixed(2);
   document.getElementById('v5').textContent = lambdas['Lagartija'].toFixed(2);
 
-  // Compute curves
   const data = curvesForBreadth(lambdas);
 
-  // Recompute y scale based on current data
   const allValues = data.flatMap(d => [d.search, d.handling, d.foraging]);
   const yMin = d3.min(allValues) * 0.7;
   const yMax = d3.max(allValues) * 1.4;
   yScale.domain([Math.max(yMin, 1e-8), yMax]);
 
-  // Render axes
   xAxis.transition().duration(200).call(
     d3.axisBottom(xScale).tickFormat((d,i) => xLabels[i])
   );
@@ -410,12 +395,10 @@ function update() {
     d3.axisLeft(yScale).ticks(5, '.1g')
   );
 
-  // Render curves
   pathSearch.datum(data).transition().duration(200).attr('d', lineGen('search'));
   pathHandling.datum(data).transition().duration(200).attr('d', lineGen('handling'));
   pathForaging.datum(data).transition().duration(200).attr('d', lineGen('foraging'));
 
-  // Markers
   const renderMarkers = (group, key, cls) => {
     const sel = group.selectAll('circle').data(data);
     sel.enter().append('circle')
@@ -431,16 +414,19 @@ function update() {
   renderMarkers(groupHandling, 'handling', 'marker-handling');
   renderMarkers(groupForaging, 'foraging', 'marker-foraging');
 
-  // Find optimum (minimum of foraging time)
   const opt = data.reduce((best, d) => d.foraging < best.foraging ? d : best, data[0]);
 
-  // Highlight optimum
   optimumGroup.selectAll('*').remove();
   optimumGroup.append('circle')
     .attr('class','optimum-circle')
     .attr('cx', xScale(opt.k))
     .attr('cy', yScale(opt.foraging))
     .attr('r', 8);
+  optimumGroup.append('circle')
+    .attr('class','optimum-inner')
+    .attr('cx', xScale(opt.k))
+    .attr('cy', yScale(opt.foraging))
+    .attr('r', 3);
   optimumGroup.append('text')
     .attr('class','optimum-label')
     .attr('x', xScale(opt.k))
@@ -448,7 +434,6 @@ function update() {
     .attr('text-anchor','middle')
     .text('óptimo');
 
-  // Update readout
   const diet = optimalDiet(lambdas);
   const dietNames = diet.map(p => p.name);
   const returnRate = R(diet, lambdas);
@@ -458,7 +443,6 @@ function update() {
   document.getElementById('return-rate').textContent = returnRate.toFixed(0);
   document.getElementById('breadth').textContent = dietNames.length;
 
-  // Diet chips
   const chipsContainer = document.getElementById('diet-chips');
   chipsContainer.innerHTML = '';
   PREY.forEach(p => {
@@ -469,12 +453,10 @@ function update() {
   });
 }
 
-// Wire up
 ['l1','l2','l3','l4','l5'].forEach(id => {
   document.getElementById(id).addEventListener('input', update);
 });
 
-// Reset button
 const defaults = { l1: 0.05, l2: 0.08, l3: 0.50, l4: 0.40, l5: 2.00 };
 document.getElementById('reset').addEventListener('click', () => {
   Object.entries(defaults).forEach(([id, val]) => {
@@ -483,7 +465,6 @@ document.getElementById('reset').addEventListener('click', () => {
   update();
 });
 
-// Initial render
 update();
 </script>
 
